@@ -1,0 +1,24 @@
+<div id="page-content">
+    <div class="open-orders-container">
+        <div class="open-order-display">
+            Заказы в работе
+        </div>
+    {% for open_order in open_orders %}
+        <div class="open-order-display">
+            № {{ open_order.daily_number }}
+        </div>
+    {% empty %}
+    {% endfor %}
+    </div>
+    <div class="ready-orders-container">
+    <div class="open-order-display">
+        Заказы на выдачу
+    </div>
+    {% for ready_order in ready_orders %}
+        <div class="ready-order-display">
+            № {{ ready_order.daily_number }}
+        </div>
+    {% empty %}
+    {% endfor %}
+    </div>
+</div>

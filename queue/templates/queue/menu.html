@@ -1,0 +1,9 @@
+<div class="menu-content">
+    {% if menu_items %}
+        {% for menu_item in menu_items %}
+            {% include "queue/menu_item.html" with menu_item=menu_item %}
+        {% endfor %}
+    {% else %}
+        <p>В меню пусто.</p>
+    {% endif %}
+</div>
