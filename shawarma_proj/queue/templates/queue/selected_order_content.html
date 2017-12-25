@@ -27,7 +27,7 @@
     </div>
 {% endfor %}
 {% if order_content and not selected_order.content_completed %}
-    <div class="cook-complite-all-button" onclick="
+    <div class="cook-complete-all-button" onclick="
             {% if selected_order.is_grilling %}
                 FinishAllContent({{ selected_order.id }})
             {% else %}

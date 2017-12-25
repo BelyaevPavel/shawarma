@@ -30,6 +30,24 @@ def redirection(request):
         return HttpResponseRedirect('current_queue')
 
 
+def cook_pause(request):
+    user = request.user
+    staff = Staff.objects.get(user=user)
+    if staff.available:
+        staff.available = False
+        staff.save()
+    else:
+        staff.available = True
+        staff.save()
+
+    data = {
+        'success': True
+    }
+
+    return cook_interface(request)
+
+
+
 def logout_view(request):
     user = request.user
     staff = Staff.objects.get(user=user)
@@ -198,9 +216,9 @@ def cook_interface(request):
     def new_processor(request):
         user = request.user
         staff = Staff.objects.get(user=user)
-        if not staff.available:
-            staff.available = True
-            staff.save()
+        # if not staff.available:
+        #     staff.available = True
+        #     staff.save()
         context = None
         taken_order_content = None
         taken_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
@@ -369,9 +387,9 @@ def cook_interface(request):
     def new_processor_with_queue(request):
         user = request.user
         staff = Staff.objects.get(user=user)
-        if not staff.available:
-            staff.available = True
-            staff.save()
+        # if not staff.available:
+        #     staff.available = True
+        #     staff.save()
         context = None
         taken_order_content = None
         new_order = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
@@ -448,6 +466,7 @@ def cook_interface(request):
         }
 
         template = loader.get_template('queue/cook_interface_with_queue.html')
+        aux_html = template.render(context, request)
         return HttpResponse(template.render(context, request))
 
     return new_processor_with_queue(request)
@@ -458,9 +477,9 @@ def c_i_a(request):
     def new_processor(request):
         user = request.user
         staff = Staff.objects.get(user=user)
-        if not staff.available:
-            staff.available = True
-            staff.save()
+        # if not staff.available:
+        #     staff.available = True
+        #     staff.save()
         # print u"AJAX from {}".format(user)
         context = None
         taken_order_content = None
@@ -527,9 +546,9 @@ def c_i_a(request):
     def queue_processor(request):
         user = request.user
         staff = Staff.objects.get(user=user)
-        if not staff.available:
-            staff.available = True
-            staff.save()
+        # if not staff.available:
+        #     staff.available = True
+        #     staff.save()
         context = None
         taken_order_content = None
         new_order = Order.objects.filter(prepared_by=staff, open_time__isnull=False,

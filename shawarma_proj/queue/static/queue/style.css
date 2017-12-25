@@ -545,11 +545,21 @@ span.cook-item-comment {
     float: right;
 }
 
-div.cook-complite-all-button {
+div.cook-complete-all-button {
     line-height: 80px;
     height: 80px;
     text-align: center;
     background-color: blueviolet;
+    border-bottom: solid 1px #D8D8D8;
+    border-top: solid 1px #D8D8D8;
+    font-size: xx-large;
+    cursor: pointer;
+}
+
+div.cook-pause-button {
+    line-height: 80px;
+    height: 80px;
+    text-align: center;
     border-bottom: solid 1px #D8D8D8;
     border-top: solid 1px #D8D8D8;
     font-size: xx-large;
