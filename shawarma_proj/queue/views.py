@@ -812,8 +812,8 @@ def voice_all(request):
 @login_required()
 @permission_required('queue.add_order')
 def make_order(request):
-    servery_ip = request.META.get('HTTP_X_REAL_IP', '') or request.META.get('HTTP_X_FORWARDED_FOR', '')
-    # servery_ip = '127.0.0.1'
+    # servery_ip = request.META.get('HTTP_X_REAL_IP', '') or request.META.get('HTTP_X_FORWARDED_FOR', '')
+    servery_ip = '127.0.0.1'
     content = json.loads(request.POST['order_content'])
     is_paid = json.loads(request.POST['is_paid'])
     paid_with_cash = json.loads(request.POST['paid_with_cash'])
@@ -1259,9 +1259,17 @@ def ready_order(request):
 @permission_required('queue.change_order')
 def pay_order(request):
     order_id = request.POST.get('id', None)
+    ids = json.loads(request.POST.get('ids', None))
+    values = json.loads(request.POST.get('values', None))
+    paid_with_cash = json.loads(request.POST['paid_with_cash'])
     if order_id:
+        for index, item_id in enumerate(ids):
+            item = OrderContent.objects.get(id=item_id)
+            item.quantity = float(values[index])
+            item.save()
         order = Order.objects.get(id=order_id)
         order.is_paid = True
+        order.paid_with_cash = paid_with_cash
         order.save()
         print "Sending request to " + order.servery.ip_address
         # print order
