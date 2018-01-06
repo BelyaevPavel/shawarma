@@ -56,7 +56,7 @@ def menu(request):
     template = loader.get_template('queue/menu_page.html')
     context = {
         'user': request.user,
-        'available_cookers': Staff.objects.filter(user__last_login__contains=datetime.date.today(), available=True,
+        'available_cookers': Staff.objects.filter(available=True,
                                                   staff_category__title__iexact='Cook'),
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
         'menu_items': menu_items,

@@ -155,6 +155,7 @@ div.ready-orders {
     height: 100%;
     float: left;
     border-left: solid 2px #D8D8D8;
+    padding-top: 20px;
 }
 
 div.open-orders {
@@ -628,4 +629,8 @@ div.stat-cook-table-header {
     font-size: small;
     font-style: italic;
     border-bottom: solid 1px #D8D8D8;
+}
+
+#logout {
+    cursor: pointer;
 }
