@@ -64,6 +64,10 @@ td.item {
     box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.5);
 }
 
+.unpaid {
+    box-shadow: 0 0 20px 0 rgba(168, 0, 2, 0.89);
+}
+
 a {
     color: #2f2f2f;
     text-decoration: none;
@@ -169,6 +173,7 @@ div.order-block-container {
     min-width: 180px;
     padding: 5px;
     float: left;
+    float: left;
 }
 
 div.order-block {
@@ -197,6 +202,9 @@ div.order-cook-part {
     font-size: large;
 }
 
+div.servery-title {
+}
+
 div.cook-order-number {
     width: 50%;
     float: left;
@@ -221,6 +229,10 @@ div.order-item {
 
 div.order-total {
     border-top: solid 1px #6e6e6e;
+}
+
+div.order-total-text {
+    text-align: right;
 }
 
 div.page-content {
@@ -472,7 +484,7 @@ div.order-started {
 }
 
 div.order-item-title, div.order-item-note, div.order-item-maker, div.order-item-actions {
-    width: 25%;
+    width: 20%;
     float: left;
     text-align: center;
 }
@@ -563,11 +575,21 @@ span.cook-item-comment {
     float: right;
 }
 
-div.cook-complite-all-button {
+div.cook-complete-all-button {
     line-height: 80px;
     height: 80px;
     text-align: center;
     background-color: blueviolet;
+    border-bottom: solid 1px #D8D8D8;
+    border-top: solid 1px #D8D8D8;
+    font-size: xx-large;
+    cursor: pointer;
+}
+
+div.cook-pause-button {
+    line-height: 80px;
+    height: 80px;
+    text-align: center;
     border-bottom: solid 1px #D8D8D8;
     border-top: solid 1px #D8D8D8;
     font-size: xx-large;

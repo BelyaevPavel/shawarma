@@ -33,6 +33,13 @@
                 </div>
             </a>
         {% endif %}
+        {% if staff_category.title == 'Shashlychnik' %}
+            <a href="{% url 'shashlychnik_interface' %}">
+                <div class="header-buttons" id="shashlychnik_interface">
+                        Интерфейс Шашлычника
+                </div>
+            </a>
+        {% endif %}
         <div class="header-who-logged" id="header-who-logged">
             {{ user.first_name }} {{ user.last_name }}
         </div>

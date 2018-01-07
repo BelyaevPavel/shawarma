@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     url(r'^$', views.welcomer, name='welcomer'),
     url(r'^menu', views.menu, name='menu'),
+    url(r'^cook_pause', views.cook_pause, name="cook_pause"),
     url(r'^order/print/(?P<order_id>[0-9]+)/$', views.print_order, name="order_print"),
     url(r'^order/voice/(?P<order_id>[0-9]+)/$', views.voice_order, name="voice_order"),
     url(r'^order/(?P<order_id>[0-9]+)/$', views.order_content, name="order_content"),
@@ -30,6 +31,8 @@ urlpatterns = [
     url(r'^production_queue', views.production_queue, name="production_queue"),
     url(r'^cook_interface', views.cook_interface, name="cook_interface"),
     url(r'^c_i_a', views.c_i_a, name="cook_interface_ajax"),
+    url(r'^shashlychnik_interface', views.shashlychnik_interface, name="shashlychnik_interface"),
+    url(r'^s_i_ajax', views.shashlychnik_interafce_ajax, name="shashlychnik_interface_ajax"),
     url(r'^redirection', views.redirection, name="redirection"),
     url(r'^buyer_queue', views.buyer_queue, name="buyer_queue"),
     url(r'^statistics', views.statistic_page, name="statistics"),

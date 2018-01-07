@@ -19,7 +19,7 @@ class MenuCategory(models.Model):
 
 
 class StaffCategory(models.Model):
-    title = models.CharField(max_length=10)
+    title = models.CharField(max_length=20)
 
     def __str__(self):
         return u"{}".format(self.title)

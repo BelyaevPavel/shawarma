@@ -238,3 +238,17 @@ function SelectOrder(id) {
         console.log('Failed ' + aux);
     });
 }
+
+
+function Pause() {
+    $.ajax({
+            type: 'POST',
+            url: $('#urls').attr('pause-url'),
+            success: function (data) {
+                location.reload();
+            }
+        }
+    ).fail(function () {
+        console.log('Failed ' + aux);
+    });
+}
