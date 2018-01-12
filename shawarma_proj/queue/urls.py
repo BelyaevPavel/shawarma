@@ -27,6 +27,7 @@ urlpatterns = [
     url(r'^ajax/finish_all_content', views.finish_all_content, name="finish_all_content"),
     url(r'^ajax/finish_supplement', views.finish_supplement, name="finish_supplement"),
     url(r'^ajax/current_queue', views.current_queue_ajax, name="current_queue_ajax"),
+    url(r'^ajax/statistics', views.statistic_page_ajax, name="update_statistics"),
     url(r'^current_queue', views.current_queue, name="current_queue"),
     url(r'^production_queue', views.production_queue, name="production_queue"),
     url(r'^cook_interface', views.cook_interface, name="cook_interface"),

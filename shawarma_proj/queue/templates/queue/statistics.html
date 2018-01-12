@@ -1,11 +1,17 @@
 {% extends 'queue/base.html' %}
 {% block aditional_static %}
 {% load static %}
+    <link rel="stylesheet" type="text/css" href={% static 'queue/jquery.datetimepicker.min.css' %}/>
     <script type="text/javascript" src="{% static 'js/statistics_handlers.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery.datetimepicker.full.js' %}"></script>
 {% endblock %}
 {% block content %}
+    <input hidden id="urls" data-update-statistics-url="{% url 'update_statistics' %}">
     <div class="stat-controls">
-        <input type="datetime">
+        <label for="datetimepicker1">От:</label>
+        <input type="text" id="datetimepicker1" onfocusout="UpdateStatistics()"/>
+        <label for="datetimepicker2">До:</label>
+        <input type="text" id="datetimepicker2" onfocusout="UpdateStatistics()"/>
     </div>
     <div class="stat-sect-container">
         Всего заказов: {{ total_orders }}
@@ -36,7 +42,7 @@
                 </div>
             </div>
             <div class="stat-actions-container">
-
+                <button onclick="UpdateStatistics">Обновить</button>
             </div>
         {% endfor %}
     </div>

@@ -2,7 +2,7 @@
  * Created by paul on 15.07.17.
  */
 $(document).ready(function () {
-    $('#menu').addClass('active');
+    $('#menu').addClass('header-active');
     $('.menu-item').hide();
 });
 

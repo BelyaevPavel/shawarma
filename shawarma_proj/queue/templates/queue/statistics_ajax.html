@@ -1,0 +1,40 @@
+<input hidden id="urls" data-update-statistics-url="{% url 'update_statistics' %}">
+<div class="stat-controls">
+    <label for="datetimepicker1">От:</label>
+    <input type="text" id="datetimepicker1" onfocusout="UpdateStatistics()"/>
+    <label for="datetimepicker2">До:</label>
+    <input type="text" id="datetimepicker2" onfocusout="UpdateStatistics()"/>
+</div>
+<div class="stat-sect-container">
+    Всего заказов: {{ total_orders }}
+    Отмененных заказов: {{ canceled_orders }}
+    <div class="stat-cook-table-header">
+        <div class="stat-cook-name">
+            Имя повара
+        </div>
+        <div class="stat-cook-prepared-orders">
+            Количество заказов
+        </div>
+        <div class="stat-cook-prepared-products">
+            Количество продуктов
+        </div>
+    </div>
+    {% for cook in cooks %}
+        <div class="stat-view-container">
+            <div class="stat-view" id="person-prod-cooked">
+                <div class="stat-cook-name">
+                    {{ cook.person.user.first_name }} {{ cook.person.user.last_name }}
+                </div>
+                <div class="stat-cook-prepared-orders">
+                    {{ cook.prepared_orders_count }}
+                </div>
+                <div class="stat-cook-prepared-products">
+                    {{ cook.prepared_products_count }}
+                </div>
+            </div>
+        </div>
+        <div class="stat-actions-container">
+                <button onclick="UpdateStatistics">Обновить</button>
+        </div>
+    {% endfor %}
+</div>

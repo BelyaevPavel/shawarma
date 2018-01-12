@@ -6,7 +6,7 @@
  */
 
 $(document).ready(function () {
-    $('#cook_interface').addClass('active');
+    $('#cook_interface').addClass('header-active');
     AdjustLineHeight();
     //GrillRefresher();
     Refresher();
