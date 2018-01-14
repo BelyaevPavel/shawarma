@@ -650,7 +650,7 @@ def shashlychnik_interface(request):
 
 
 @login_required()
-def shashlychnik_interafce_ajax(request):
+def s_i_a(request):
     def queue_processor(request):
         user = request.user
         staff = Staff.objects.get(user=user)
@@ -799,7 +799,7 @@ def select_order(request):
     return JsonResponse(data=data)
 
 
-def sh_select_order(request):
+def shashlychnik_select_order(request):
     order_id = request.POST.get('order_id', None)
     data = {
         'success': False
