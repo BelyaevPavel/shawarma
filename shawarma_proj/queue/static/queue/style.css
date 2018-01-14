@@ -630,29 +630,41 @@ div.stat-sect-container {
 }
 
 div.stat-cook-name {
-    min-width: 20%;
+    min-width: 16%;
     font-size: larger;
     float: left;
     padding-left: 20px;
 }
 
-div.stat-cook-prepared-orders {
+div.stat-cook-prepared-orders .stat-cook-prepared-products .stat-cook-avg-prep-times .stat-cook-max-prep-times .stat-cook-min-prep-times{
     min-width: 10%;
+    width: 200px;
+    max-width: 16%;
     font-size: larger;
     float: left;
     text-align: center;
 }
 
-div.stat-cook-prepared-products {
+div.stat-cook-table-cell{
     min-width: 10%;
+    width: 16%;
+    max-width: 25%;
     font-size: larger;
+    float: left;
     text-align: center;
 }
 
+
 div.stat-cook-table-header {
+    width: 100%;
     font-size: small;
     font-style: italic;
+    display: inline-block;
     border-bottom: solid 1px #D8D8D8;
+}
+
+div.stat-view-container.stat-view{
+    width: 100%;
 }
 
 div.stat-actions-container{

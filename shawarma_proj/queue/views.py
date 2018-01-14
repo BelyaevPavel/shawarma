@@ -9,7 +9,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import logout, login, views as auth_views
-from django.db.models import Max, Count, Avg, F
+from django.db.models import Max, Min, Count, Avg, F
 from hashlib import md5
 from shawarma.settings import TIME_ZONE, LISTNER_URL, LISTNER_PORT, PRINTER_URL
 import requests
@@ -883,7 +883,8 @@ def make_order(request):
             for cook_index in range(0, len(cooks)):
                 cooks_order_content = OrderContent.objects.filter(order__prepared_by=cooks[cook_index],
                                                                   order__open_time__contains=datetime.date.today(),
-                                                                  order__is_canceled=False, order__close_time__isnull=True,
+                                                                  order__is_canceled=False,
+                                                                  order__close_time__isnull=True,
                                                                   menu_item__can_be_prepared_by__title__iexact='Cook')
                 if min_count > len(cooks_order_content):
                     min_count = len(cooks_order_content)
@@ -1313,7 +1314,7 @@ def pay_order(request):
                 content_presence = True
             if menu_item.can_be_prepared_by.title == 'Operator':
                 supplement_presence = True
-            total += menu_item.price*item.quantity
+            total += menu_item.price * item.quantity
         order.total = total
         # order.supplement_completed = not supplement_presence
         # order.content_completed = not content_presence
@@ -1356,16 +1357,47 @@ def cancel_item(request):
 @login_required()
 def statistic_page(request):
     template = loader.get_template('queue/statistics.html')
+    avg_preparation_time = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=False,
+                                                is_canceled=False).values(
+        'open_time', 'close_time').aggregate(preparation_time=Avg(F('close_time') - F('open_time')))
+    min_preparation_time = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=False,
+                                                is_canceled=False).values(
+        'open_time', 'close_time').aggregate(preparation_time=Min(F('close_time') - F('open_time')))
+    max_preparation_time = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=False,
+                                                is_canceled=False).values(
+        'open_time', 'close_time').aggregate(preparation_time=Max(F('close_time') - F('open_time')))
     context = {
         'total_orders': len(Order.objects.filter(open_time__contains=datetime.date.today())),
         'canceled_orders': len(
             Order.objects.filter(open_time__contains=datetime.date.today(), is_canceled__isnull=True)),
+        'avg_prep_time': str(avg_preparation_time['preparation_time']).split('.', 2)[0],
+        'min_prep_time': str(min_preparation_time['preparation_time']).split('.', 2)[0],
+        'max_prep_time': str(max_preparation_time['preparation_time']).split('.', 2)[0],
         'cooks': [{'person': cook,
-                   'prepared_orders_count': len(Order.objects.filter(prepared_by=cook,
-                                                                     open_time__contains=datetime.date.today())),
-                   'prepared_products_count': len(OrderContent.objects.filter(order__open_time__contains=datetime.datetime.today(),
-                                                                              order__prepared_by=cook,
-                                                                              menu_item__can_be_prepared_by__title__iexact='Cook'))}
+                   'prepared_orders_count': len(
+                       Order.objects.filter(prepared_by=cook, open_time__contains=datetime.date.today(),
+                                            close_time__isnull=False, is_canceled=False)),
+                   'prepared_products_count': len(OrderContent.objects.filter(order__prepared_by=cook,
+                                                                              order__open_time__contains=datetime.date.today(),
+                                                                              order__close_time__isnull=False,
+                                                                              order__is_canceled=False,
+                                                                              menu_item__can_be_prepared_by__title__iexact='Cook')),
+                   'avg_prep_time': str(
+                       Order.objects.filter(prepared_by=cook, open_time__contains=datetime.date.today(),
+                                            close_time__isnull=False, is_canceled=False).values(
+                           'open_time', 'close_time').aggregate(preparation_time=Avg(F('close_time') - F('open_time')))[
+                           'preparation_time']).split('.', 2)[0],
+                   'min_prep_time': str(
+                       Order.objects.filter(prepared_by=cook, open_time__contains=datetime.date.today(),
+                                            close_time__isnull=False, is_canceled=False).values(
+                           'open_time', 'close_time').aggregate(preparation_time=Min(F('close_time') - F('open_time')))[
+                           'preparation_time']).split('.', 2)[0],
+                   'max_prep_time': str(
+                       Order.objects.filter(prepared_by=cook, open_time__contains=datetime.date.today(),
+                                            close_time__isnull=False, is_canceled=False).values(
+                           'open_time', 'close_time').aggregate(preparation_time=Max(F('close_time') - F('open_time')))[
+                           'preparation_time']).split('.', 2)[0]
+                   }
                   for cook in Staff.objects.filter(staff_category__title__iexact='Cook').order_by('user__first_name')]
     }
     return HttpResponse(template.render(context, request))
@@ -1374,22 +1406,53 @@ def statistic_page(request):
 @login_required()
 def statistic_page_ajax(request):
     start_date = request.POST.get('start_date', None)
-    start_date_conv = datetime.datetime.strptime(start_date, "%Y/%m/%d %H:%M") # u'2018/01/04 22:31'
+    start_date_conv = datetime.datetime.strptime(start_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
     end_date = request.POST.get('end_date', None)
-    end_date_conv = datetime.datetime.strptime(end_date, "%Y/%m/%d %H:%M") # u'2018/01/04 22:31'
+    end_date_conv = datetime.datetime.strptime(end_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
     template = loader.get_template('queue/statistics_ajax.html')
+    avg_preparation_time = Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv,
+                                                close_time__isnull=False, is_canceled=False).values(
+        'open_time', 'close_time').aggregate(preparation_time=Avg(F('close_time') - F('open_time')))
+    min_preparation_time = Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv,
+                                                close_time__isnull=False, is_canceled=False).values(
+        'open_time', 'close_time').aggregate(preparation_time=Min(F('close_time') - F('open_time')))
+    max_preparation_time = Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv,
+                                                close_time__isnull=False, is_canceled=False).values(
+        'open_time', 'close_time').aggregate(preparation_time=Max(F('close_time') - F('open_time')))
     context = {
         'total_orders': len(Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv)),
         'canceled_orders': len(
             Order.objects.filter(open_time__contains=datetime.date.today(), is_canceled__isnull=True)),
+        'avg_prep_time': str(avg_preparation_time['preparation_time']).split('.', 2)[0],
+        'min_prep_time': str(min_preparation_time['preparation_time']).split('.', 2)[0],
+        'max_prep_time': str(max_preparation_time['preparation_time']).split('.', 2)[0],
         'cooks': [{'person': cook,
                    'prepared_orders_count': len(Order.objects.filter(prepared_by=cook,
                                                                      open_time__gte=start_date_conv,
-                                                                     open_time__lte=end_date_conv)),
+                                                                     open_time__lte=end_date_conv,
+                                                                     close_time__isnull=False, is_canceled=False)),
                    'prepared_products_count': len(OrderContent.objects.filter(order__prepared_by=cook,
                                                                               order__open_time__gte=start_date_conv,
                                                                               order__open_time__lte=end_date_conv,
-                                                                              menu_item__can_be_prepared_by__title__iexact='Cook'))}
+                                                                              order__close_time__isnull=False,
+                                                                              order__is_canceled=False,
+                                                                              menu_item__can_be_prepared_by__title__iexact='Cook')),
+                   'avg_prep_time': str(Order.objects.filter(prepared_by=cook, open_time__gte=start_date_conv,
+                                                             open_time__lte=end_date_conv, close_time__isnull=False,
+                                                             is_canceled=False).values(
+                       'open_time', 'close_time').aggregate(preparation_time=Avg(F('close_time') - F('open_time')))[
+                                            'preparation_time']).split('.', 2)[0],
+                   'min_prep_time': str(Order.objects.filter(prepared_by=cook, open_time__gte=start_date_conv,
+                                                             open_time__lte=end_date_conv, close_time__isnull=False,
+                                                             is_canceled=False).values(
+                       'open_time', 'close_time').aggregate(preparation_time=Min(F('close_time') - F('open_time')))[
+                                            'preparation_time']).split('.', 2)[0],
+                   'max_prep_time': str(Order.objects.filter(prepared_by=cook, open_time__gte=start_date_conv,
+                                                             open_time__lte=end_date_conv, close_time__isnull=False,
+                                                             is_canceled=False).values(
+                       'open_time', 'close_time').aggregate(preparation_time=Max(F('close_time') - F('open_time')))[
+                                            'preparation_time']).split('.', 2)[0]
+                   }
                   for cook in Staff.objects.filter(staff_category__title__iexact='Cook').order_by('user__first_name')]
     }
     data = {
