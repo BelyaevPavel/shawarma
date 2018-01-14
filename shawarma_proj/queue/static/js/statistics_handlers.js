@@ -24,7 +24,7 @@ function UpdateStatistics() {
             },
             dataType: 'json',
             success: function (data) {
-                $('#page-content').html(data['html']);
+                $('#statistics-content').html(data['html']);
             },
             complete: function () {
 

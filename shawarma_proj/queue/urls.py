@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'^voice_all/$', views.voice_all, name="voice_all"),
     url(r'^ajax/unvoice', views.unvoice_order, name="unvoice_order"),
     url(r'^ajax/select_order', views.select_order, name="select_order"),
+    # url(r'^ajax/select_order_shashlychnik', views.sh_select_order, name="select_order_shashlychnik"),
     url(r'^ajax/make_order', views.make_order, name="make_order"),
     url(r'^ajax/buyer_queue', views.buyer_queue_ajax, name="buyer_queue_ajax"),
     url(r'^ajax/close_order', views.close_order, name="close_order"),

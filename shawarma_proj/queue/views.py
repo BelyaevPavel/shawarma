@@ -642,7 +642,7 @@ def shashlychnik_interface(request):
             'staff_category': staff
         }
 
-        template = loader.get_template('queue/cook_interface_with_queue.html')
+        template = loader.get_template('queue/shaslychnik_interface_with_queue.html')
         aux_html = template.render(context, request)
         return HttpResponse(template.render(context, request))
 
@@ -788,6 +788,29 @@ def select_order(request):
                                'item': item} for number, item in
                               enumerate(OrderContent.objects.filter(order__id=order_id,
                                                                     menu_item__can_be_prepared_by__title__iexact='Cook'),
+                                        start=1)]
+        }
+        template = loader.get_template('queue/selected_order_content.html')
+        data = {
+            'success': True,
+            'html': template.render(context, request)
+        }
+
+    return JsonResponse(data=data)
+
+
+def sh_select_order(request):
+    order_id = request.POST.get('order_id', None)
+    data = {
+        'success': False
+    }
+    if order_id:
+        context = {
+            'selected_order': get_object_or_404(Order, id=order_id),
+            'order_content': [{'number': number,
+                               'item': item} for number, item in
+                              enumerate(OrderContent.objects.filter(order__id=order_id,
+                                                                    menu_item__can_be_prepared_by__title__iexact='Shashlychnik'),
                                         start=1)]
         }
         template = loader.get_template('queue/selected_order_content.html')
@@ -1340,8 +1363,8 @@ def statistic_page(request):
         'cooks': [{'person': cook,
                    'prepared_orders_count': len(Order.objects.filter(prepared_by=cook,
                                                                      open_time__contains=datetime.date.today())),
-                   'prepared_products_count': len(OrderContent.objects.filter(order__prepared_by=cook,
-                                                                              order__open_time__contains=datetime.date.today(),
+                   'prepared_products_count': len(OrderContent.objects.filter(order__open_time__contains=datetime.datetime.today(),
+                                                                              order__prepared_by=cook,
                                                                               menu_item__can_be_prepared_by__title__iexact='Cook'))}
                   for cook in Staff.objects.filter(staff_category__title__iexact='Cook').order_by('user__first_name')]
     }
@@ -1354,7 +1377,7 @@ def statistic_page_ajax(request):
     start_date_conv = datetime.datetime.strptime(start_date, "%Y/%m/%d %H:%M") # u'2018/01/04 22:31'
     end_date = request.POST.get('end_date', None)
     end_date_conv = datetime.datetime.strptime(end_date, "%Y/%m/%d %H:%M") # u'2018/01/04 22:31'
-    template = loader.get_template('queue/statistics.html')
+    template = loader.get_template('queue/statistics_ajax.html')
     context = {
         'total_orders': len(Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv)),
         'canceled_orders': len(
@@ -1364,8 +1387,8 @@ def statistic_page_ajax(request):
                                                                      open_time__gte=start_date_conv,
                                                                      open_time__lte=end_date_conv)),
                    'prepared_products_count': len(OrderContent.objects.filter(order__prepared_by=cook,
-                                                                              open_time__gte=start_date_conv,
-                                                                              open_time__lte=end_date_conv,
+                                                                              order__open_time__gte=start_date_conv,
+                                                                              order__open_time__lte=end_date_conv,
                                                                               menu_item__can_be_prepared_by__title__iexact='Cook'))}
                   for cook in Staff.objects.filter(staff_category__title__iexact='Cook').order_by('user__first_name')]
     }
