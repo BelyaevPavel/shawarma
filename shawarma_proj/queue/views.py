@@ -164,6 +164,32 @@ def current_queue(request):
 
 
 @login_required()
+def order_history(request):
+    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=False,
+                                       is_canceled=False, is_ready=True).order_by('open_time')
+    # print open_orders
+    # print ready_orders
+
+    template = loader.get_template('queue/order_history.html')
+    context = {
+        'open_orders': [{'order': open_order,
+                         'printed': open_order.printed,
+                         'cook_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='cook').filter(
+                             finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                         'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                         'operator_part': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='operator')
+                         } for open_order in open_orders],
+        'open_length': len(open_orders),
+        'staff_category': StaffCategory.objects.get(staff__user=request.user),
+    }
+    # print context
+    return HttpResponse(template.render(context, request))
+
+
+@login_required()
 def current_queue_ajax(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        is_canceled=False, is_ready=False).order_by('open_time')

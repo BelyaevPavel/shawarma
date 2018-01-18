@@ -678,6 +678,7 @@ div.stat-controls{
     height: 30px;
     float: left;
     font-size: large;
+    padding: 20px;
 }
 
 #logout {
