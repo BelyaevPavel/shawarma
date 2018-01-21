@@ -599,7 +599,7 @@ def shashlychnik_interface(request):
         #     staff.save()
         context = None
         taken_order_content = None
-        new_order = Order.objects.filter(open_time__isnull=False,
+        new_orders = Order.objects.filter(open_time__isnull=False,
                                          open_time__contains=datetime.date.today(), is_canceled=False,
                                          shashlyk_completed=False, is_grilling_shash=False,
                                          close_time__isnull=True).order_by('open_time')
@@ -607,23 +607,25 @@ def shashlychnik_interface(request):
                                             open_time__contains=datetime.date.today(), is_canceled=False,
                                             close_time__isnull=True).order_by('open_time')
         has_order = False
-        if len(new_order) > 0:
-            new_order = new_order[0]
-            taken_order_content = OrderContent.objects.filter(order=new_order,
+        selected_order = None
+        for order in new_orders:
+            taken_order_content = OrderContent.objects.filter(order=order,
                                                               menu_item__can_be_prepared_by__title__iexact='Shashlychnik',
                                                               finish_timestamp__isnull=True).order_by('id')
             if len(taken_order_content) > 0:
                 has_order = True
+                selected_order = order
+                break
 
-        taken_order_content = OrderContent.objects.filter(order=new_order,
+        taken_order_content = OrderContent.objects.filter(order=selected_order,
                                                           menu_item__can_be_prepared_by__title__iexact='Shashlychnik').order_by(
             'id')
-        taken_order_in_grill_content = OrderContent.objects.filter(order=new_order,
+        taken_order_in_grill_content = OrderContent.objects.filter(order=selected_order,
                                                                    grill_timestamp__isnull=False,
                                                                    menu_item__can_be_prepared_by__title__iexact='Shashlychnik').order_by(
             'id')
         context = {
-            'free_order': new_order,
+            'selected_order': selected_order,
             'order_content': [{'number': number,
                                'item': item} for number, item in enumerate(taken_order_content, start=1)],
             'in_grill_content': [{'number': number,
@@ -679,7 +681,7 @@ def s_i_a(request):
                                                                    menu_item__can_be_prepared_by__title__iexact='Shashlychnik').order_by(
             'id')
         context = {
-            'selected_order': new_order,
+            'selected_order': selected_order,
             'order_content': [{'number': number,
                                'item': item} for number, item in enumerate(taken_order_content, start=1)],
             'staff_category': staff.staff_category,
@@ -1103,12 +1105,28 @@ def to_grill(request):
             product.start_timestamp = datetime.datetime.now()
         product.save()
         order_content = OrderContent.objects.filter(order_id=product.order_id)
-        flag = True
-        for item in order_content:
-            if not item.is_in_grill:
-                flag = False
-        if flag:
-            product.order.is_grilling = True
+
+        shashlychnik_products = OrderContent.objects.filter(order=product.order,
+                                               menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+        cook_products = OrderContent.objects.filter(order=product.order,
+                                               menu_item__can_be_prepared_by__title__iexact='Cook')
+
+        # Check if all shashlyk is frying.
+        shashlyk_is_grilling = True
+        for product in shashlychnik_products:
+            if not product.is_in_grill:
+                shashlyk_is_grilling = False
+
+        product.order.is_grilling_shash = shashlyk_is_grilling
+
+        # Check if all shawarma is frying.
+        content_is_grilling = True
+        for product in cook_products:
+            if not product.is_in_grill:
+                content_is_grilling = False
+
+        product.order.is_grilling = content_is_grilling
+        if content_is_grilling or shashlyk_is_grilling:
             product.order.save()
     data = {
         'success': True,
@@ -1153,15 +1171,32 @@ def finish_cooking(request):
         product.finish_timestamp = datetime.datetime.now()
         product.save()
         order_content = OrderContent.objects.filter(order_id=product.order_id)
-        flag = True
-        for item in order_content:
-            if item.finish_timestamp is None:
-                flag = False
-        if flag:
-            product.order.content_completed = True
-            print "saving"
+
+        shashlychnik_products = OrderContent.objects.filter(order=product.order,
+                                               menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+        cook_products = OrderContent.objects.filter(order=product.order,
+                                               menu_item__can_be_prepared_by__title__iexact='Cook')
+
+        # Check if all shashlyk is frying.
+        shashlyk_is_finished = True
+        for product in shashlychnik_products:
+            if product.finish_timestamp is None:
+                shashlyk_is_finished = False
+
+        product.order.shashlyk_completed = shashlyk_is_finished
+
+        # Check if all shawarma is frying.
+        content_is_finished = True
+        for product in cook_products:
+            if product.finish_timestamp is None:
+                content_is_finished = False
+
+        product.order.content_completed = content_is_finished
+
+
+        if content_is_finished or shashlyk_is_finished:
             product.order.save()
-            print product.order.content_completed
+
         data = {
             'success': True,
             'product_id': product_id,
