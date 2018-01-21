@@ -43,8 +43,11 @@ def cook_pause(request):
     data = {
         'success': True
     }
+    if staff.staff_category.title == 'Cook':
+        return cook_interface(request)
 
-    return cook_interface(request)
+    if staff.staff_category.title == 'Shashlychnik':
+        return shashlychnik_interface(request)
 
 
 def logout_view(request):
@@ -439,42 +442,6 @@ def cook_interface(request):
             if len(taken_order_content) > 0:
                 has_order = True
 
-        # if not has_order:
-        #     free_orders = Order.objects.filter(prepared_by__isnull=True, is_canceled=False,
-        #                                        open_time__contains=datetime.date.today()).order_by('open_time')
-        #
-        #     for free_order in free_orders:
-        #         taken_order_content = OrderContent.objects.filter(order=free_order,
-        #                                                           menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
-        #             'id')
-        #         taken_order_in_grill_content = OrderContent.objects.filter(order=free_order,
-        #                                                                    grill_timestamp__isnull=False,
-        #                                                                    menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
-        #             'id')
-        #         # ALERT! Only SuperGuy can handle this amount of shawarma!!!
-        #         if len(taken_order_content) > 6:
-        #             if staff.super_guy:
-        #                 free_order.prepared_by = staff
-        #             else:
-        #                 continue
-        #         else:
-        #             free_order.prepared_by = staff
-        #
-        #         if free_order.prepared_by == staff:
-        #             free_order.save()
-        #             # print "Free orders prepared_by: {}".format(free_order.prepared_by)
-        #             context = {
-        #                 'free_order': free_order,
-        #                 'order_content': [{'number': number,
-        #                                    'item': item} for number, item in enumerate(taken_order_content, start=1)],
-        #                 'in_grill_content': [{'number': number,
-        #                                       'item': item} for number, item in
-        #                                      enumerate(taken_order_in_grill_content, start=1)],
-        #                 'staff_category': staff
-        #             }
-        #
-        #         break
-        # else:
         taken_order_content = OrderContent.objects.filter(order=new_order,
                                                           menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
             'id')
@@ -494,7 +461,8 @@ def cook_interface(request):
                                                                                     menu_item__can_be_prepared_by__title__iexact='cook'))}
                              for cooks_order in other_orders if len(OrderContent.objects.filter(order=cooks_order,
                                                                                                 menu_item__can_be_prepared_by__title__iexact='cook')) > 0],
-            'staff_category': staff
+            'staff_category': staff.staff_category,
+            'staff': staff
         }
 
         template = loader.get_template('queue/cook_interface_with_queue.html')
@@ -607,7 +575,8 @@ def c_i_a(request):
             'selected_order': new_order,
             'order_content': [{'number': number,
                                'item': item} for number, item in enumerate(taken_order_content, start=1)],
-            'staff_category': staff
+            'staff_category': staff.staff_category,
+            'staff': staff
         }
         template = loader.get_template('queue/selected_order_content.html')
         data = {
@@ -632,7 +601,7 @@ def shashlychnik_interface(request):
         taken_order_content = None
         new_order = Order.objects.filter(open_time__isnull=False,
                                          open_time__contains=datetime.date.today(), is_canceled=False,
-                                         content_completed=False, is_grilling=False,
+                                         shashlyk_completed=False, is_grilling_shash=False,
                                          close_time__isnull=True).order_by('open_time')
         other_orders = Order.objects.filter(open_time__isnull=False,
                                             open_time__contains=datetime.date.today(), is_canceled=False,
@@ -665,7 +634,8 @@ def shashlychnik_interface(request):
                                                                                     menu_item__can_be_prepared_by__title__iexact='Shashlychnik'))}
                              for cooks_order in other_orders if len(OrderContent.objects.filter(order=cooks_order,
                                                                                                 menu_item__can_be_prepared_by__title__iexact='Shashlychnik')) > 0],
-            'staff_category': staff
+            'staff_category': staff.staff_category,
+            'staff': staff
         }
 
         template = loader.get_template('queue/shaslychnik_interface_with_queue.html')
@@ -687,21 +657,24 @@ def s_i_a(request):
         taken_order_content = None
         new_order = Order.objects.filter(open_time__isnull=False,
                                          open_time__contains=datetime.date.today(), is_canceled=False,
-                                         content_completed=False, is_grilling=False,
+                                         shashlyk_completed=False, is_grilling_shash=False,
                                          close_time__isnull=True).order_by('open_time')
         has_order = False
-        if len(new_order) > 0:
-            new_order = new_order[0]
-            taken_order_content = OrderContent.objects.filter(order=new_order,
+        selected_order = None
+        for order in new_order:
+            taken_order_content = OrderContent.objects.filter(order=order,
                                                               menu_item__can_be_prepared_by__title__iexact='Shashlychnik',
                                                               finish_timestamp__isnull=True).order_by('id')
             if len(taken_order_content) > 0:
                 has_order = True
+                selected_order = order
+                break
 
-        taken_order_content = OrderContent.objects.filter(order=new_order,
+
+        taken_order_content = OrderContent.objects.filter(order=selected_order,
                                                           menu_item__can_be_prepared_by__title__iexact='Shashlychnik').order_by(
             'id')
-        taken_order_in_grill_content = OrderContent.objects.filter(order=new_order,
+        taken_order_in_grill_content = OrderContent.objects.filter(order=selected_order,
                                                                    grill_timestamp__isnull=False,
                                                                    menu_item__can_be_prepared_by__title__iexact='Shashlychnik').order_by(
             'id')
@@ -709,7 +682,8 @@ def s_i_a(request):
             'selected_order': new_order,
             'order_content': [{'number': number,
                                'item': item} for number, item in enumerate(taken_order_content, start=1)],
-            'staff_category': staff
+            'staff_category': staff.staff_category,
+            'staff': staff
         }
         template = loader.get_template('queue/selected_order_content.html')
         data = {
@@ -803,6 +777,8 @@ def unvoice_order(request):
 
 
 def select_order(request):
+    user = request.user
+    staff = Staff.objects.get(user=user)
     order_id = request.POST.get('order_id', None)
     data = {
         'success': False
@@ -814,7 +790,8 @@ def select_order(request):
                                'item': item} for number, item in
                               enumerate(OrderContent.objects.filter(order__id=order_id,
                                                                     menu_item__can_be_prepared_by__title__iexact='Cook'),
-                                        start=1)]
+                                        start=1)],
+            'staff_category': staff.staff_category
         }
         template = loader.get_template('queue/selected_order_content.html')
         data = {
@@ -826,6 +803,8 @@ def select_order(request):
 
 
 def shashlychnik_select_order(request):
+    user = request.user
+    staff = Staff.objects.get(user=user)
     order_id = request.POST.get('order_id', None)
     data = {
         'success': False
@@ -837,7 +816,8 @@ def shashlychnik_select_order(request):
                                'item': item} for number, item in
                               enumerate(OrderContent.objects.filter(order__id=order_id,
                                                                     menu_item__can_be_prepared_by__title__iexact='Shashlychnik'),
-                                        start=1)]
+                                        start=1)],
+            'staff_category': staff.staff_category
         }
         template = loader.get_template('queue/selected_order_content.html')
         data = {
@@ -1201,10 +1181,17 @@ def finish_cooking(request):
 # @login_required()
 # @permission_required('queue.can_cook')
 def finish_all_content(request):
+    user = request.user
+    staff = Staff.objects.get(user=user)
     order_id = request.POST.get('id', None)
     if order_id:
         order = Order.objects.get(id=order_id)
-        products = OrderContent.objects.filter(order=order, menu_item__can_be_prepared_by__title__iexact='Cook')
+        shashlychnik_products = OrderContent.objects.filter(order=order,
+                                               menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+        cook_products = OrderContent.objects.filter(order=order,
+                                               menu_item__can_be_prepared_by__title__iexact='Cook')
+        products = OrderContent.objects.filter(order=order,
+                                               menu_item__can_be_prepared_by__title__iexact=staff.staff_category.title)
         for product in products:
             product.is_in_grill = False
             product.finish_timestamp = datetime.datetime.now()
@@ -1213,7 +1200,22 @@ def finish_all_content(request):
             if product.staff_maker is None:
                 product.staff_maker = Staff.objects.get(user=request.user)
             product.save()
-        order.content_completed = True
+
+        # Check if all shashlyk is frying.
+        shashlyk_is_finished = True
+        for product in shashlychnik_products:
+            if product.finish_timestamp is None:
+                shashlyk_is_finished = False
+
+        order.shashlyk_completed = shashlyk_is_finished
+
+        # Check if all shawarma is frying.
+        content_is_finished = True
+        for product in cook_products:
+            if product.finish_timestamp is None:
+                content_is_finished = False
+
+        order.content_completed = content_is_finished
         # print "saving"
         order.save()
         data = {
@@ -1230,17 +1232,39 @@ def finish_all_content(request):
 # @login_required()
 # @permission_required('queue.can_cook')
 def grill_all_content(request):
+    user = request.user
+    staff = Staff.objects.get(user=user)
     order_id = request.POST.get('order_id', None)
     if order_id:
         order = Order.objects.get(id=order_id)
-        products = OrderContent.objects.filter(order=order, menu_item__can_be_prepared_by__title__iexact='Cook')
+        shashlychnik_products = OrderContent.objects.filter(order=order,
+                                               menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+        cook_products = OrderContent.objects.filter(order=order,
+                                               menu_item__can_be_prepared_by__title__iexact='Cook')
+        products = OrderContent.objects.filter(order=order,
+                                               menu_item__can_be_prepared_by__title__iexact=staff.staff_category.title)
         for product in products:
             product.start_timestamp = datetime.datetime.now()
             product.grill_timestamp = datetime.datetime.now()
             product.is_in_grill = True
             product.staff_maker = Staff.objects.get(user=request.user)
             product.save()
-        order.is_grilling = True
+
+        # Check if all shashlyk is frying.
+        all_is_grilling = True
+        for product in shashlychnik_products:
+            if not product.is_in_grill:
+                all_is_grilling = False
+
+        order.is_grilling_shash = all_is_grilling
+
+        # Check if all shawarma is frying.
+        all_is_grilling = True
+        for product in cook_products:
+            if not product.is_in_grill:
+                all_is_grilling = False
+
+        order.is_grilling = all_is_grilling
         # print "saving"
         order.save()
         data = {
