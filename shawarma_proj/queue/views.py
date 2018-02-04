@@ -132,8 +132,8 @@ def current_queue(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        is_canceled=False, is_ready=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        is_canceled=False, content_completed=True, supplement_completed=True,
-                                        is_ready=True).order_by('open_time')
+                                        is_canceled=False, content_completed=True, shashlyk_completed=True,
+                                        supplement_completed=True, is_ready=True).order_by('open_time')
     # print open_orders
     # print ready_orders
 
@@ -146,6 +146,11 @@ def current_queue(request):
                              finish_timestamp__isnull=False).aggregate(count=Count('id')),
                          'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
                              menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                         'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
+                             finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                         'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
                          'operator_part': OrderContent.objects.filter(order=open_order).filter(
                              menu_item__can_be_prepared_by__title__iexact='operator')
                          } for open_order in open_orders],
@@ -155,6 +160,11 @@ def current_queue(request):
                               finish_timestamp__isnull=False).aggregate(count=Count('id')),
                           'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
                               menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                         'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
+                             finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                         'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
                           'operator_part': OrderContent.objects.filter(order=open_order).filter(
                               menu_item__can_be_prepared_by__title__iexact='operator')
                           } for open_order in ready_orders],
@@ -197,8 +207,8 @@ def current_queue_ajax(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        is_canceled=False, is_ready=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        is_canceled=False, content_completed=True, supplement_completed=True,
-                                        is_ready=True).order_by('open_time')
+                                        is_canceled=False, content_completed=True, shashlyk_completed=True,
+                                        supplement_completed=True, is_ready=True).order_by('open_time')
 
     template = loader.get_template('queue/current_queue_grid_ajax.html')
     context = {
@@ -209,6 +219,11 @@ def current_queue_ajax(request):
                              finish_timestamp__isnull=False).aggregate(count=Count('id')),
                          'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
                              menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                         'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
+                             finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                         'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
                          'operator_part': OrderContent.objects.filter(order=open_order).filter(
                              menu_item__can_be_prepared_by__title__iexact='operator')
                          } for open_order in open_orders],
@@ -218,6 +233,11 @@ def current_queue_ajax(request):
                               finish_timestamp__isnull=False).aggregate(count=Count('id')),
                           'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
                               menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                         'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
+                             finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                         'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
                           'operator_part': OrderContent.objects.filter(order=open_order).filter(
                               menu_item__can_be_prepared_by__title__iexact='operator')
                           } for open_order in ready_orders],
@@ -914,14 +934,17 @@ def make_order(request):
 
     total = 0
     content_presence = False
+    shashlyk_presence = False
     supplement_presence = False
     for item in content:
         for i in range(0, int(item['quantity'])):
             new_order_content = OrderContent(order=order, menu_item_id=item['id'], note=item['note'])
             new_order_content.save()
             menu_item = Menu.objects.get(id=item['id'])
-            if menu_item.can_be_prepared_by.title == 'Cook' or menu_item.can_be_prepared_by.title == 'Shashlychnik':
+            if menu_item.can_be_prepared_by.title == 'Cook' :
                 content_presence = True
+            if menu_item.can_be_prepared_by.title == 'Shashlychnik':
+                shashlyk_presence = True
             if menu_item.can_be_prepared_by.title == 'Operator':
                 supplement_presence = True
             total += menu_item.price
@@ -935,6 +958,7 @@ def make_order(request):
 
     order.total = total
     order.content_completed = not content_presence
+    order.shashlyk_completed = not shashlyk_presence
     order.supplement_completed = not supplement_presence
     order.save()
     if order.is_paid:
@@ -954,6 +978,7 @@ def close_order(request):
     order_id = json.loads(request.POST.get('order_id', None))
     order = Order.objects.get(id=order_id)
     order.close_time = datetime.datetime.now()
+    order.is_ready = True
     order.save()
     data = {
         'success': True,
