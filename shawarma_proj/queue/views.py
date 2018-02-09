@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.http.response import HttpResponseRedirect
 
-from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent, Servery
+from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent, Servery, OrderOpinion
 from django.template import loader
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -84,6 +84,51 @@ def menu(request):
     return HttpResponse(template.render(context, request))
 
 
+def evaluation(request):
+    template = loader.get_template('queue/evaluation_page.html')
+    context = {
+
+    }
+    return HttpResponse(template.render(context, request))
+
+
+def evaluate(request):
+    daily_number = request.POST.get('daily_number', None)
+    mark = request.POST.get('mark', None)
+    note = request.POST.get('note', '')
+    try:
+        if daily_number:
+            daily_number = int(daily_number)
+            current_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
+                Max('daily_number'))
+            current_daily_number = current_daily_number['daily_number__max']
+            hundreds = current_daily_number // 100
+            if daily_number + hundreds * 100 <= current_daily_number:
+                if hundreds * 100 <= daily_number + hundreds * 100:
+                    order = Order.objects.get(open_time__contains=datetime.date.today(),
+                                              daily_number=daily_number + hundreds * 100)
+                    order_opinion = OrderOpinion(note=note, mark=int(mark), order=order)
+                    order_opinion.save()
+                else:
+                    order = Order.objects.get(open_time__contains=datetime.date.today(),
+                                              daily_number=daily_number + (hundreds - 1) * 100)
+                    order_opinion = OrderOpinion(note=note, mark=int(mark), order=order)
+                    order_opinion.save()
+        else:
+            order_opinion = OrderOpinion(note=note, mark=int(mark))
+            order_opinion.save()
+
+        data = {
+            'success': True
+        }
+        return JsonResponse(data)
+    except:
+        data = {
+            'success': False
+        }
+        return JsonResponse(data)
+
+
 def buyer_queue(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        is_canceled=False, is_ready=False).order_by('open_time')
@@ -160,11 +205,11 @@ def current_queue(request):
                               finish_timestamp__isnull=False).aggregate(count=Count('id')),
                           'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
                               menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
-                         'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
-                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
-                             finish_timestamp__isnull=False).aggregate(count=Count('id')),
-                         'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
-                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
+                          'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
+                              finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                          'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
                           'operator_part': OrderContent.objects.filter(order=open_order).filter(
                               menu_item__can_be_prepared_by__title__iexact='operator')
                           } for open_order in ready_orders],
@@ -233,11 +278,11 @@ def current_queue_ajax(request):
                               finish_timestamp__isnull=False).aggregate(count=Count('id')),
                           'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
                               menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
-                         'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
-                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
-                             finish_timestamp__isnull=False).aggregate(count=Count('id')),
-                         'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
-                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
+                          'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
+                              finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                          'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
                           'operator_part': OrderContent.objects.filter(order=open_order).filter(
                               menu_item__can_be_prepared_by__title__iexact='operator')
                           } for open_order in ready_orders],
@@ -620,9 +665,9 @@ def shashlychnik_interface(request):
         context = None
         taken_order_content = None
         new_orders = Order.objects.filter(open_time__isnull=False,
-                                         open_time__contains=datetime.date.today(), is_canceled=False,
-                                         shashlyk_completed=False, is_grilling_shash=False,
-                                         close_time__isnull=True).order_by('open_time')
+                                          open_time__contains=datetime.date.today(), is_canceled=False,
+                                          shashlyk_completed=False, is_grilling_shash=False,
+                                          close_time__isnull=True).order_by('open_time')
         other_orders = Order.objects.filter(open_time__isnull=False,
                                             open_time__contains=datetime.date.today(), is_canceled=False,
                                             close_time__isnull=True).order_by('open_time')
@@ -691,7 +736,6 @@ def s_i_a(request):
                 has_order = True
                 selected_order = order
                 break
-
 
         taken_order_content = OrderContent.objects.filter(order=selected_order,
                                                           menu_item__can_be_prepared_by__title__iexact='Shashlychnik').order_by(
@@ -864,7 +908,7 @@ def voice_all(request):
 @permission_required('queue.add_order')
 def make_order(request):
     servery_ip = request.META.get('HTTP_X_REAL_IP', '') or request.META.get('HTTP_X_FORWARDED_FOR', '')
-    # servery_ip = '127.0.0.1'
+    servery_ip = '127.0.0.1'
     content = json.loads(request.POST['order_content'])
     is_paid = json.loads(request.POST['is_paid'])
     paid_with_cash = json.loads(request.POST['paid_with_cash'])
@@ -941,7 +985,7 @@ def make_order(request):
             new_order_content = OrderContent(order=order, menu_item_id=item['id'], note=item['note'])
             new_order_content.save()
             menu_item = Menu.objects.get(id=item['id'])
-            if menu_item.can_be_prepared_by.title == 'Cook' :
+            if menu_item.can_be_prepared_by.title == 'Cook':
                 content_presence = True
             if menu_item.can_be_prepared_by.title == 'Shashlychnik':
                 shashlyk_presence = True
@@ -964,7 +1008,7 @@ def make_order(request):
     if order.is_paid:
         print "Sending request to " + order.servery.ip_address
         print order
-        requests.post('http://' + order.servery.ip_address + ':' + LISTNER_PORT, json=prepare_json_check(order))
+        # requests.post('http://' + order.servery.ip_address + ':' + LISTNER_PORT, json=prepare_json_check(order))
         print "Request sent."
 
     data["total"] = order.total
@@ -1132,9 +1176,9 @@ def to_grill(request):
         order_content = OrderContent.objects.filter(order_id=product.order_id)
 
         shashlychnik_products = OrderContent.objects.filter(order=product.order,
-                                               menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+                                                            menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
         cook_products = OrderContent.objects.filter(order=product.order,
-                                               menu_item__can_be_prepared_by__title__iexact='Cook')
+                                                    menu_item__can_be_prepared_by__title__iexact='Cook')
 
         # Check if all shashlyk is frying.
         shashlyk_is_grilling = True
@@ -1198,9 +1242,9 @@ def finish_cooking(request):
         order_content = OrderContent.objects.filter(order_id=product.order_id)
 
         shashlychnik_products = OrderContent.objects.filter(order=product.order,
-                                               menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+                                                            menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
         cook_products = OrderContent.objects.filter(order=product.order,
-                                               menu_item__can_be_prepared_by__title__iexact='Cook')
+                                                    menu_item__can_be_prepared_by__title__iexact='Cook')
 
         # Check if all shashlyk is frying.
         shashlyk_is_finished = True
@@ -1217,7 +1261,6 @@ def finish_cooking(request):
                 content_is_finished = False
 
         product.order.content_completed = content_is_finished
-
 
         if content_is_finished or shashlyk_is_finished:
             product.order.save()
@@ -1247,9 +1290,9 @@ def finish_all_content(request):
     if order_id:
         order = Order.objects.get(id=order_id)
         shashlychnik_products = OrderContent.objects.filter(order=order,
-                                               menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+                                                            menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
         cook_products = OrderContent.objects.filter(order=order,
-                                               menu_item__can_be_prepared_by__title__iexact='Cook')
+                                                    menu_item__can_be_prepared_by__title__iexact='Cook')
         products = OrderContent.objects.filter(order=order,
                                                menu_item__can_be_prepared_by__title__iexact=staff.staff_category.title)
         for product in products:
@@ -1298,9 +1341,9 @@ def grill_all_content(request):
     if order_id:
         order = Order.objects.get(id=order_id)
         shashlychnik_products = OrderContent.objects.filter(order=order,
-                                               menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+                                                            menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
         cook_products = OrderContent.objects.filter(order=order,
-                                               menu_item__can_be_prepared_by__title__iexact='Cook')
+                                                    menu_item__can_be_prepared_by__title__iexact='Cook')
         products = OrderContent.objects.filter(order=order,
                                                menu_item__can_be_prepared_by__title__iexact=staff.staff_category.title)
         for product in products:
@@ -1565,6 +1608,62 @@ def statistic_page_ajax(request):
                    }
                   for cook in Staff.objects.filter(staff_category__title__iexact='Cook').order_by('user__first_name')]
     }
+    data = {
+        'html': template.render(context, request)
+    }
+    return JsonResponse(data=data)
+
+
+@login_required()
+def opinion_statistics(request):
+    template = loader.get_template('queue/opinion_statistics.html')
+    avg_mark = OrderOpinion.objects.filter(order__open_time__contains=datetime.date.today()).values('mark').aggregate(
+        avg_mark=Avg('mark'))
+    min_mark = OrderOpinion.objects.filter(order__open_time__contains=datetime.date.today()).values('mark').aggregate(
+        min_mark=Min('mark'))
+    max_mark = OrderOpinion.objects.filter(order__open_time__contains=datetime.date.today()).values('mark').aggregate(
+        max_mark=Max('mark'))
+    context = {
+        'total_orders': len(OrderOpinion.objects.filter(order__open_time__contains=datetime.date.today())),
+        'avg_mark': avg_mark['avg_mark'],
+        'min_mark': min_mark['min_mark'],
+        'max_mark': max_mark['max_mark'],
+        'opinions': [opinion for opinion in
+                     OrderOpinion.objects.filter(order__open_time__contains=datetime.date.today()).order_by(
+                         'order__open_time')]
+    }
+    return HttpResponse(template.render(context, request))
+
+
+@login_required()
+def opinion_statistics_ajax(request):
+    start_date = request.POST.get('start_date', None)
+    start_date_conv = datetime.datetime.strptime(start_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
+    end_date = request.POST.get('end_date', None)
+    end_date_conv = datetime.datetime.strptime(end_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
+    template = loader.get_template('queue/opinion_statistics_ajax.html')
+
+    avg_mark = OrderOpinion.objects.filter(order__open_time__gte=start_date_conv,
+                                           order__open_time__lte=end_date_conv).values('mark').aggregate(
+        avg_mark=Avg('mark'))
+    min_mark = OrderOpinion.objects.filter(order__open_time__gte=start_date_conv,
+                                           order__open_time__lte=end_date_conv).values('mark').aggregate(
+        min_mark=Min('mark'))
+    max_mark = OrderOpinion.objects.filter(order__open_time__gte=start_date_conv,
+                                           order__open_time__lte=end_date_conv).values('mark').aggregate(
+        max_mark=Max('mark'))
+    context = {
+        'total_orders': len(
+            OrderOpinion.objects.filter(order__open_time__gte=start_date_conv, order__open_time__lte=end_date_conv)),
+        'avg_prep_time': avg_mark['avg_mark'],
+        'min_prep_time': min_mark['min_mark'],
+        'max_prep_time': max_mark['max_mark'],
+        'opinions': [opinion for opinion in
+                     OrderOpinion.objects.filter(order__open_time__gte=start_date_conv,
+                                                 order__open_time__lte=end_date_conv).order_by(
+                         'order__open_time')]
+    }
+
     data = {
         'html': template.render(context, request)
     }

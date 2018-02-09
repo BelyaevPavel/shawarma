@@ -122,3 +122,15 @@ class OrderContent(models.Model):
             ('can_cancel', 'User can cancel order content.'),
             ('can_cook', 'User can cook order content'),
         )
+
+
+class OrderOpinion(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, blank=True, null=True)
+    mark = models.IntegerField(default=0)
+    note = models.TextField(max_length=1000, blank=True, null=True)
+
+    def __str__(self):
+        return u"№{} {}".format(self.order, self.mark)
+
+    def __unicode__(self):
+        return u"№{} {}".format(self.order, self.mark)

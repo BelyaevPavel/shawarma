@@ -28,6 +28,7 @@ urlpatterns = [
     url(r'^ajax/finish_supplement', views.finish_supplement, name="finish_supplement"),
     url(r'^ajax/current_queue', views.current_queue_ajax, name="current_queue_ajax"),
     url(r'^ajax/statistics', views.statistic_page_ajax, name="update_statistics"),
+    url(r'^ajax/opinion_statistics', views.opinion_statistics_ajax, name="update_opinion_statistics"),
     url(r'^ajax/s_order_shashlychnik', views.shashlychnik_select_order, name="select_order_shashlychnik"),
     url(r'^current_queue', views.current_queue, name="current_queue"),
     url(r'^production_queue', views.production_queue, name="production_queue"),
@@ -39,5 +40,8 @@ urlpatterns = [
     url(r'^redirection', views.redirection, name="redirection"),
     url(r'^buyer_queue', views.buyer_queue, name="buyer_queue"),
     url(r'^statistics', views.statistic_page, name="statistics"),
-    url(r'^logout_link', views.logout_view, name="logout_link")
+    url(r'^opinion_statistics', views.opinion_statistics, name="opinion_statistics"),
+    url(r'^logout_link', views.logout_view, name="logout_link"),
+    url(r'^evaluation', views.evaluation, name="evaluation"),
+    url(r'^evaluate', views.evaluate, name="evaluate")
 ]

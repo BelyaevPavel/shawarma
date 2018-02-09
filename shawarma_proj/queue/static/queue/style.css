@@ -665,6 +665,7 @@ div.stat-cook-table-header {
 
 div.stat-view-container.stat-view{
     width: 100%;
+    float: left;
 }
 
 div.stat-actions-container{
@@ -683,4 +684,108 @@ div.stat-controls{
 
 #logout {
     cursor: pointer;
+}
+
+div.evaluation-note-block{
+    width: 100%;
+    height: 30%;
+    padding: 1%;
+    float: left;
+}
+
+div.evaluation-order-number-block {
+    width: 100%;
+    height: 10%;
+    padding-top: 25px;
+    float: left;
+    text-align: center;
+}
+
+div.marks-block {
+    width: 100%;
+    height: 30%;
+    float: left;
+}
+
+div.mark-block {
+    width: 18%;
+    height: 90%;
+    float: left;
+    text-align: center;
+    border-bottom: solid 2px #D8D8D8;
+    border-top: solid 1px #D8D8D8;
+    line-height: 7;
+    font-size: large;
+    margin: 1%;
+    background-color: #F6F6F6;
+    box-shadow: inset 0 0 1px -1px rgba(0, 0, 0, 0.33);
+}
+
+div.chosen-mark-block {
+    background-color: dodgerblue;
+    box-shadow: inset 0 0 10px -1px rgba(0, 0, 0, 0.33);
+    color: white;
+}
+
+textarea.evaluation-note-textarea {
+    height: 49%;
+    width: 98%;
+}
+
+textarea:-moz-placeholder {
+    color: #333333;
+}
+
+input.evaluation-order-number-input {
+    width: 30%;
+}
+
+div.evaluate-button {
+    width: 98%;
+    height: 49%;
+    font-size: large;
+    line-height: 3;
+    text-align: center;
+    box-shadow: 0 0 10px -1px rgba(0, 0, 0, 0.33);
+    border: solid 1px #D8D8D8;
+}
+
+div.stat-opinion-order-datetime {
+
+    min-width: 10%;
+    width: 15%;
+    max-width: 25%;
+    font-size: larger;
+    float: left;
+    text-align: center;
+}
+
+div.stat-opinion-daily-number {
+
+    min-width: 10%;
+    width: 10%;
+    max-width: 25%;
+    font-size: larger;
+    float: left;
+    text-align: center;
+}
+
+div.stat-opinion-note {
+
+    min-width: 10%;
+    width: 55%;
+    max-width: 55%;
+    font-size: larger;
+    float: left;
+    text-align: center;
+}
+
+div.stat-opinion-mark {
+
+    min-width: 10%;
+    width: 10%;
+    max-width: 25%;
+    font-size: larger;
+    float: left;
+    text-align: center;
 }
