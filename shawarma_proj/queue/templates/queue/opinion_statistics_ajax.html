@@ -27,7 +27,11 @@
                     {{ opinion.order.daily_number }}
                 </div>
                 <div class="stat-opinion-note">
-                    {{ opinion.note }}
+                    {% if opinion.note %}
+                        {{ opinion.note }}
+                    {% else %}
+                        -
+                    {% endif %}
                 </div>
                 <div class="stat-opinion-mark">
                     {{ opinion.mark }}

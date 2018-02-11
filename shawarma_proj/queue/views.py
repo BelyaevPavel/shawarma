@@ -107,15 +107,17 @@ def evaluate(request):
                 if hundreds * 100 <= daily_number + hundreds * 100:
                     order = Order.objects.get(open_time__contains=datetime.date.today(),
                                               daily_number=daily_number + hundreds * 100)
-                    order_opinion = OrderOpinion(note=note, mark=int(mark), order=order)
+                    order_opinion = OrderOpinion(note=note, mark=int(mark), order=order,
+                                                 post_time=datetime.datetime.now())
                     order_opinion.save()
                 else:
                     order = Order.objects.get(open_time__contains=datetime.date.today(),
                                               daily_number=daily_number + (hundreds - 1) * 100)
-                    order_opinion = OrderOpinion(note=note, mark=int(mark), order=order)
+                    order_opinion = OrderOpinion(note=note, mark=int(mark), order=order,
+                                                 post_time=datetime.datetime.now())
                     order_opinion.save()
         else:
-            order_opinion = OrderOpinion(note=note, mark=int(mark))
+            order_opinion = OrderOpinion(note=note, mark=int(mark), post_time=datetime.datetime.now())
             order_opinion.save()
 
         data = {
@@ -1617,20 +1619,19 @@ def statistic_page_ajax(request):
 @login_required()
 def opinion_statistics(request):
     template = loader.get_template('queue/opinion_statistics.html')
-    avg_mark = OrderOpinion.objects.filter(order__open_time__contains=datetime.date.today()).values('mark').aggregate(
+    avg_mark = OrderOpinion.objects.filter(post_time__contains=datetime.date.today()).values('mark').aggregate(
         avg_mark=Avg('mark'))
-    min_mark = OrderOpinion.objects.filter(order__open_time__contains=datetime.date.today()).values('mark').aggregate(
+    min_mark = OrderOpinion.objects.filter(post_time__contains=datetime.date.today()).values('mark').aggregate(
         min_mark=Min('mark'))
-    max_mark = OrderOpinion.objects.filter(order__open_time__contains=datetime.date.today()).values('mark').aggregate(
+    max_mark = OrderOpinion.objects.filter(post_time__contains=datetime.date.today()).values('mark').aggregate(
         max_mark=Max('mark'))
     context = {
-        'total_orders': len(OrderOpinion.objects.filter(order__open_time__contains=datetime.date.today())),
+        'total_orders': len(OrderOpinion.objects.filter(post_time__contains=datetime.date.today())),
         'avg_mark': avg_mark['avg_mark'],
         'min_mark': min_mark['min_mark'],
         'max_mark': max_mark['max_mark'],
         'opinions': [opinion for opinion in
-                     OrderOpinion.objects.filter(order__open_time__contains=datetime.date.today()).order_by(
-                         'order__open_time')]
+                     OrderOpinion.objects.filter(post_time__contains=datetime.date.today()).order_by('post_time')]
     }
     return HttpResponse(template.render(context, request))
 
@@ -1643,24 +1644,20 @@ def opinion_statistics_ajax(request):
     end_date_conv = datetime.datetime.strptime(end_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
     template = loader.get_template('queue/opinion_statistics_ajax.html')
 
-    avg_mark = OrderOpinion.objects.filter(order__open_time__gte=start_date_conv,
-                                           order__open_time__lte=end_date_conv).values('mark').aggregate(
-        avg_mark=Avg('mark'))
-    min_mark = OrderOpinion.objects.filter(order__open_time__gte=start_date_conv,
-                                           order__open_time__lte=end_date_conv).values('mark').aggregate(
-        min_mark=Min('mark'))
-    max_mark = OrderOpinion.objects.filter(order__open_time__gte=start_date_conv,
-                                           order__open_time__lte=end_date_conv).values('mark').aggregate(
-        max_mark=Max('mark'))
+    avg_mark = OrderOpinion.objects.filter(post_time__gte=start_date_conv,
+                                           post_time__lte=end_date_conv).values('mark').aggregate(avg_mark=Avg('mark'))
+    min_mark = OrderOpinion.objects.filter(post_time__gte=start_date_conv,
+                                           post_time__lte=end_date_conv).values('mark').aggregate(min_mark=Min('mark'))
+    max_mark = OrderOpinion.objects.filter(post_time__gte=start_date_conv,
+                                           post_time__lte=end_date_conv).values('mark').aggregate(max_mark=Max('mark'))
     context = {
         'total_orders': len(
-            OrderOpinion.objects.filter(order__open_time__gte=start_date_conv, order__open_time__lte=end_date_conv)),
-        'avg_prep_time': avg_mark['avg_mark'],
-        'min_prep_time': min_mark['min_mark'],
-        'max_prep_time': max_mark['max_mark'],
+            OrderOpinion.objects.filter(post_time__gte=start_date_conv, post_time__lte=end_date_conv)),
+        'avg_mark': avg_mark['avg_mark'],
+        'min_mark': min_mark['min_mark'],
+        'max_mark': max_mark['max_mark'],
         'opinions': [opinion for opinion in
-                     OrderOpinion.objects.filter(order__open_time__gte=start_date_conv,
-                                                 order__open_time__lte=end_date_conv).order_by(
+                     OrderOpinion.objects.filter(post_time__gte=start_date_conv, post_time__lte=end_date_conv).order_by(
                          'order__open_time')]
     }
 

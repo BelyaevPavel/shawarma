@@ -128,6 +128,7 @@ class OrderOpinion(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, blank=True, null=True)
     mark = models.IntegerField(default=0)
     note = models.TextField(max_length=1000, blank=True, null=True)
+    post_time = models.DateTimeField(verbose_name="Post Time", null=True)
 
     def __str__(self):
         return u"№{} {}".format(self.order, self.mark)
