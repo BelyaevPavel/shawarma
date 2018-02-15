@@ -13,7 +13,7 @@ var csrftoken = $("[name=csrfmiddlewaretoken]").val();
 
 $(function () {
     $('.subm').on('click', function (event) {
-        if(currOrder.length>0) {
+        if (currOrder.length > 0) {
             var confirmation = confirm("Подтвердить заказ?");
             var form = $('.subm');
             var is_paid = false;
@@ -40,13 +40,11 @@ $(function () {
                         },
                         dataType: 'json',
                         success: function (data) {
-                            if (is_paid && paid_with_cash)
-                            {
+                            if (is_paid && paid_with_cash) {
                                 var cash = prompt('Заказ №' + data.daily_number + ' добавлен!, Введите полученную сумму:', "");
-                                alert("Сдача: " + (parseInt(cash)-parseInt($('p.totalDisplay').text())))
+                                alert("Сдача: " + (parseInt(cash) - parseInt($('p.totalDisplay').text())))
                             }
-                            else
-                            {
+                            else {
                                 alert('Заказ №' + data.daily_number + ' добавлен!');
                             }
                             currOrder = [];
@@ -104,14 +102,29 @@ function AddOne(id, title, price) {
 }
 
 function EditNote(id, note) {
-	var newnote = prompt("Комментарий", note);
-	if (newnote != null) {
-		var index = FindItem(id, note);
-		if (index != null){
-			currOrder[index]['note'] = newnote;
-		}
-	}
-	DrawOrderTable();
+    var newnote = prompt("Комментарий", note);
+    if (newnote != null) {
+        var index = FindItem(id, note);
+        if (index != null) {
+            currOrder[index]['note'] = newnote;
+        }
+    }
+    DrawOrderTable();
+}
+
+function SelectSuggestion(id, note) {
+    // var newnote = prompt("Комментарий", note);
+    // if (newnote != null) {
+    //     var index = FindItem(id, note);
+    //     if (index != null) {
+    //         currOrder[index]['note'] = newnote;
+    //     }
+    // }
+    $('#note-' + id).val(note);
+    if (id != null) {
+        currOrder[id]['note'] = $('#note-' + id).val();
+    }
+    DrawOrderTable();
 }
 
 function Add(id, title, price) {
@@ -157,6 +170,8 @@ function DrawOrderTable() {
             '<div>' + currOrder[i]['title'] + '</div><div class="noteText">' + currOrder[i]['note'] + '</div>' +
             '</td><td class="currentOrderActionCell">' + 'x' + currOrder[i]['quantity'] +
             '<input type="text" value="1" class="quantityInput" id="count-to-remove-' + i + '">' +
+            '<input type="text" value="' + currOrder[i]['note'] + '" class="live-search-box" id="note-' + i + '" onkeyup="ss(' + i + ','+currOrder[i]['id']+')">' +
+            '<div id="dropdown-list-container"></div>' +
             '<button class="btnRemove" onclick="Remove(' + i + ')">Убрать</button>' +
             '</td></tr>'
         );
@@ -173,5 +188,73 @@ function CalculateTotal() {
 
 function ChangeCategory(category) {
     $('.menu-item').hide();
-    $('[category='+category+']').show();
+    $('[category=' + category + ']').show();
+}
+
+function ShowDialog(Text) {
+    var promptbox = document.createElement('div');
+    promptbox.setAttribute('id', 'promptbox');
+    promptbox.setAttribute('class', 'promptbox');
+    promptbox.innerHTML = '<input class="note-input" id="note-input"/>';
+    promptbox.innerHTML = '<button class="note-OK" id="note-OK"/>';
+    promptbox.innerHTML = '<button class="note-Cancel" id="note-Cancel"/>';
+    $('#note-OK').onclick();
+    $('#note-Cancel').onclick();
+    $('#note-input').val(Text);
+}
+
+function SearchSuggestion(id) {
+    var input = $('#note-' + id);
+    var input_pos = input.position();
+    var old_html = (input.parent()).html();
+    var html_st = '<div id="dropdown-list"> sdf</div>';
+    (input.parent()).html(old_html + html_st);
+    $('#dropdown-list').css({
+        left: input_pos.left,
+        top: input_pos.top + input.height(),
+        position: 'absolute',
+        width: input.width()
+    });
+}
+
+function ss(index, id) {
+    var input = $('#note-' + index);
+    var input_pos = input.position();
+    var searchTerm = $('#note-' + index).val();
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken)
+        }
+    });
+    $.ajax({
+            type: 'POST',
+            url: $('#urls').attr('data-search-comment'),
+            data: {
+                "id": index,
+                "note": searchTerm
+            },
+            dataType: 'json',
+            success: function (data) {
+                $('#dropdown-list-container').html(data['html']);
+                $('#dropdown-list').css({
+                    left: input_pos.left,
+                    top: input_pos.top + 25,
+                    position: 'absolute'
+                });
+            }
+        }
+    ).fail(function () {
+        alert('У вас нет права добавлять заказ!');
+    });
+
+
+    $('.live-search-list li').each(function () {
+
+        if ($(this).filter('[data-search-term *= ' + searchTerm + ']').length > 0 || searchTerm.length < 1) {
+            $(this).show();
+        } else {
+            $(this).hide();
+        }
+
+    });
 }

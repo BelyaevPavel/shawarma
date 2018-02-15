@@ -84,6 +84,23 @@ def menu(request):
     return HttpResponse(template.render(context, request))
 
 
+def search_comment(request):
+    content_id = request.POST.get('id', '')
+    comment_part = request.POST.get('note', '')
+    data = {
+        'html': ''
+    }
+    if len(comment_part) > 0:
+        comments = OrderContent.objects.filter(note__icontains=comment_part)
+        context = {
+            'id': content_id,
+            'comments': comments
+        }
+        template = loader.get_template('queue/suggestion_list.html')
+        data['html'] = template.render(context,request)
+    return JsonResponse(data)
+
+
 def evaluation(request):
     template = loader.get_template('queue/evaluation_page.html')
     context = {

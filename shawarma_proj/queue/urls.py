@@ -9,6 +9,7 @@ urlpatterns = [
     url(r'^order/voice/(?P<order_id>[0-9]+)/$', views.voice_order, name="voice_order"),
     url(r'^order/(?P<order_id>[0-9]+)/$', views.order_content, name="order_content"),
     url(r'^voice_all/$', views.voice_all, name="voice_all"),
+    url(r'^ajax/search_comment', views.search_comment, name="search_comment"),
     url(r'^ajax/unvoice', views.unvoice_order, name="unvoice_order"),
     url(r'^ajax/select_order', views.select_order, name="select_order"),
     url(r'^ajax/make_order', views.make_order, name="make_order"),
