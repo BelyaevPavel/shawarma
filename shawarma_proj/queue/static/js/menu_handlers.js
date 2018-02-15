@@ -42,7 +42,7 @@ $(function () {
                         success: function (data) {
                             if (is_paid && paid_with_cash) {
                                 var cash = prompt('Заказ №' + data.daily_number + ' добавлен!, Введите полученную сумму:', "");
-                                alert("Сдача: " + (parseInt(cash) - parseInt($('p.totalDisplay').text())))
+                                alert("Сдача: " + (parseInt(cash) - total))
                             }
                             else {
                                 alert('Заказ №' + data.daily_number + ' добавлен!');
