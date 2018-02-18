@@ -170,9 +170,9 @@ function DrawOrderTable() {
             '<div>' + currOrder[i]['title'] + '</div><div class="noteText">' + currOrder[i]['note'] + '</div>' +
             '</td><td class="currentOrderActionCell">' + 'x' + currOrder[i]['quantity'] +
             '<input type="text" value="1" class="quantityInput" id="count-to-remove-' + i + '">' +
+            '<button class="btnRemove" onclick="Remove(' + i + ')">Убрать</button>' +
             '<input type="text" value="' + currOrder[i]['note'] + '" class="live-search-box" id="note-' + i + '" onkeyup="ss(' + i + ','+currOrder[i]['id']+')">' +
             '<div id="dropdown-list-container"></div>' +
-            '<button class="btnRemove" onclick="Remove(' + i + ')">Убрать</button>' +
             '</td></tr>'
         );
     }
@@ -183,7 +183,9 @@ function CalculateTotal() {
     for (var i = 0; i < currOrder.length; i++) {
         total += currOrder[i]['price'] * currOrder[i]['quantity'];
     }
-    $('p.totalDisplay').text(total);
+    $('p.totalDisplay').each(function () {
+        $(this).text(total);
+    });
 }
 
 function ChangeCategory(category) {
@@ -221,6 +223,7 @@ function ss(index, id) {
     var input = $('#note-' + index);
     var input_pos = input.position();
     var searchTerm = $('#note-' + index).val();
+    currOrder[index]['note'] = searchTerm;
     $.ajaxSetup({
         beforeSend: function (xhr, settings) {
             xhr.setRequestHeader("X-CSRFToken", csrftoken)

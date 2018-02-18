@@ -163,7 +163,7 @@ div.ready-orders {
 }
 
 div.open-orders {
-    width: calc(100% - 205px);
+    width: calc(100% - 235px);
     height: 100%;
     float: left;
 }
@@ -510,8 +510,11 @@ input.item-note {
     width: 100%;
 }
 
-p.noteText {
+.noteText {
     font-size: small;
+    font-style: italic;
+    color: blue;
+    float: right;
 }
 
 img#shawarma-header {
@@ -806,7 +809,6 @@ color: #fff;
 .live-search-box {
 width: 100%;
 display: block;
-padding: 1em;
 -webkit-box-sizing: border-box;
 -moz-box-sizing: border-box;
 box-sizing: border-box;

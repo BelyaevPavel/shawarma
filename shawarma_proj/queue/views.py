@@ -91,13 +91,13 @@ def search_comment(request):
         'html': ''
     }
     if len(comment_part) > 0:
-        comments = OrderContent.objects.filter(note__icontains=comment_part)
+        comments = OrderContent.objects.filter(note__icontains=comment_part).distinct('note')[:5]
         context = {
             'id': content_id,
             'comments': comments
         }
         template = loader.get_template('queue/suggestion_list.html')
-        data['html'] = template.render(context,request)
+        data['html'] = template.render(context, request)
     return JsonResponse(data)
 
 
@@ -927,11 +927,19 @@ def voice_all(request):
 @permission_required('queue.add_order')
 def make_order(request):
     servery_ip = request.META.get('HTTP_X_REAL_IP', '') or request.META.get('HTTP_X_FORWARDED_FOR', '')
-    servery_ip = '127.0.0.1'
+    # servery_ip = '127.0.0.1'
     content = json.loads(request.POST['order_content'])
     is_paid = json.loads(request.POST['is_paid'])
     paid_with_cash = json.loads(request.POST['paid_with_cash'])
     cook_choose = request.POST['cook_choose']
+
+    if len(content)==0:
+        data={
+            'success': False,
+            'message': 'Order is empty!'
+        }
+        return JsonResponse(data)
+
     servery = Servery.objects.get(ip_address=servery_ip)
     order_next_number = 0
     order_last_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
@@ -1027,7 +1035,7 @@ def make_order(request):
     if order.is_paid:
         print "Sending request to " + order.servery.ip_address
         print order
-        # requests.post('http://' + order.servery.ip_address + ':' + LISTNER_PORT, json=prepare_json_check(order))
+        requests.post('http://' + order.servery.ip_address + ':' + LISTNER_PORT, json=prepare_json_check(order))
         print "Request sent."
 
     data["total"] = order.total
