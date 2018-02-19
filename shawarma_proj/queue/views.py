@@ -5,6 +5,8 @@ from django.http.response import HttpResponseRedirect
 
 from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent, Servery, OrderOpinion
 from django.template import loader
+from django.core.exceptions import EmptyResultSet, MultipleObjectsReturned, PermissionDenied, ObjectDoesNotExist
+from requests.exceptions import ConnectionError, ConnectTimeout, Timeout
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
@@ -933,32 +935,70 @@ def make_order(request):
     paid_with_cash = json.loads(request.POST['paid_with_cash'])
     cook_choose = request.POST['cook_choose']
 
-    if len(content)==0:
-        data={
+    if len(content) == 0:
+        data = {
             'success': False,
             'message': 'Order is empty!'
         }
         return JsonResponse(data)
 
-    servery = Servery.objects.get(ip_address=servery_ip)
+    try:
+        servery = Servery.objects.get(ip_address=servery_ip)
+    except MultipleObjectsReturned:
+        data = {
+            'success': False,
+            'message': 'Multiple serveries returned!'
+        }
+        return JsonResponse(data)
+    except :
+        data = {
+            'success': False,
+            'message': 'Something wrong happened while getting servery!'
+        }
+        return JsonResponse(data)
+
     order_next_number = 0
-    order_last_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
-        Max('daily_number'))
+    try:
+        order_last_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
+            Max('daily_number'))
+    except EmptyResultSet:
+        data = {
+            'success': False,
+            'message': 'Empty set of orders returned!'
+        }
+        return JsonResponse(data)
+    except:
+        data = {
+            'success': False,
+            'message': 'Something wrong happened while getting set of orders!'
+        }
+        return JsonResponse(data)
+
     if order_last_daily_number:
         if order_last_daily_number['daily_number__max'] is not None:
             order_next_number = order_last_daily_number['daily_number__max'] + 1
         else:
             order_next_number = 1
 
-            # if order_next_number % 100 == 0:
-            # order_next_number += 1
+    try:
+        order = Order(open_time=datetime.datetime.now(), daily_number=order_next_number, is_paid=is_paid,
+                      paid_with_cash=paid_with_cash)
+    except:
+        data = {
+            'success': False,
+            'message': 'Something wrong happened while creating new order!'
+        }
+        return JsonResponse(data)
 
-    order = Order(open_time=datetime.datetime.now(), daily_number=order_next_number, is_paid=is_paid,
-                  paid_with_cash=paid_with_cash)
-    super_guy = Staff.objects.filter(super_guy=True, user__last_login__contains=datetime.date.today(),
-                                     staff_category__title__iexact='Cook')
     # cooks = Staff.objects.filter(user__last_login__contains=datetime.date.today(), staff_category__title__iexact='Cook')
-    cooks = Staff.objects.filter(available=True, staff_category__title__iexact='Cook')
+    try:
+        cooks = Staff.objects.filter(available=True, staff_category__title__iexact='Cook')
+    except:
+        data = {
+            'success': False,
+            'message': 'Something wrong happened while getting set of cooks!'
+        }
+        return JsonResponse(data)
     # reordering_flag = False
     # while
     # cooks_order_content = OrderContent.objects.filter(order__prepared_by=cooks,
@@ -980,24 +1020,39 @@ def make_order(request):
             min_index = 0
             min_count = 100
             for cook_index in range(0, len(cooks)):
-                cooks_order_content = OrderContent.objects.filter(order__prepared_by=cooks[cook_index],
-                                                                  order__open_time__contains=datetime.date.today(),
-                                                                  order__is_canceled=False,
-                                                                  order__close_time__isnull=True,
-                                                                  menu_item__can_be_prepared_by__title__iexact='Cook')
+                try:
+                    cooks_order_content = OrderContent.objects.filter(order__prepared_by=cooks[cook_index],
+                                                                      order__open_time__contains=datetime.date.today(),
+                                                                      order__is_canceled=False,
+                                                                      order__close_time__isnull=True,
+                                                                      menu_item__can_be_prepared_by__title__iexact='Cook')
+                except:
+                    data = {
+                        'success': False,
+                        'message': 'Something wrong happened while getting cook\'s content!'
+                    }
+                    return JsonResponse(data)
+
                 if min_count > len(cooks_order_content):
                     min_count = len(cooks_order_content)
                     min_index = cook_index
 
-            if len(super_guy) > 0:
-                if len(content) > 6:
-                    order.prepared_by = super_guy[0]
-                else:
-                    order.prepared_by = cooks[min_index]
-            else:
-                order.prepared_by = cooks[min_index]
+            order.prepared_by = cooks[min_index]
         else:
-            order.prepared_by = Staff.objects.get(id=int(cook_choose))
+            try:
+                order.prepared_by = Staff.objects.get(id=int(cook_choose))
+            except MultipleObjectsReturned:
+                data = {
+                    'success': False,
+                    'message': 'Multiple staff returned while binding cook to order!'
+                }
+                return JsonResponse(data)
+            except:
+                data = {
+                    'success': False,
+                    'message': 'Something wrong happened while getting set of orders!'
+                }
+                return JsonResponse(data)
 
     content_to_send = []
     order.servery = servery
@@ -1009,7 +1064,15 @@ def make_order(request):
     supplement_presence = False
     for item in content:
         for i in range(0, int(item['quantity'])):
-            new_order_content = OrderContent(order=order, menu_item_id=item['id'], note=item['note'])
+            try:
+                new_order_content = OrderContent(order=order, menu_item_id=item['id'], note=item['note'])
+            except:
+                order.delete()
+                data = {
+                    'success': False,
+                    'message': 'Something wrong happened while creating new order!'
+                }
+                return JsonResponse(data)
             new_order_content.save()
             menu_item = Menu.objects.get(id=item['id'])
             if menu_item.can_be_prepared_by.title == 'Cook':
@@ -1035,7 +1098,23 @@ def make_order(request):
     if order.is_paid:
         print "Sending request to " + order.servery.ip_address
         print order
-        requests.post('http://' + order.servery.ip_address + ':' + LISTNER_PORT, json=prepare_json_check(order))
+        try:
+            requests.post('http://' + order.servery.ip_address + ':' + LISTNER_PORT, json=prepare_json_check(order))
+        except ConnectionError:
+            order.delete()
+            data = {
+                'success': False,
+                'message': 'Connection error occured while sending to 1C!'
+            }
+            return JsonResponse(data)
+        except:
+            order.delete()
+            data = {
+                'success': False,
+                'message': 'Something wrong happened while sending to 1C!'
+            }
+            return JsonResponse(data)
+
         print "Request sent."
 
     data["total"] = order.total
