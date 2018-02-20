@@ -1037,9 +1037,10 @@ def make_order(request):
         print order
         requests.post('http://' + order.servery.ip_address + ':' + LISTNER_PORT, json=prepare_json_check(order))
         print "Request sent."
-
+    data["success"] = True
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
+    data["message"] = ''
     return JsonResponse(data)
 
 
