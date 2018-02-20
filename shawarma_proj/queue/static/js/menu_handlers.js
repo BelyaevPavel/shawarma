@@ -13,6 +13,7 @@ var csrftoken = $("[name=csrfmiddlewaretoken]").val();
 
 $(function () {
     $('.subm').on('click', function (event) {
+        $('.subm').prop('disabled', true);
         if (currOrder.length > 0) {
             var confirmation = confirm("Подтвердить заказ?");
             var form = $('.subm');
@@ -40,22 +41,28 @@ $(function () {
                         },
                         dataType: 'json',
                         success: function (data) {
-                            if (is_paid && paid_with_cash) {
-                                var cash = prompt('Заказ №' + data.daily_number + ' добавлен!, Введите полученную сумму:', "");
-                                alert("Сдача: " + (parseInt(cash) - total))
+                            if (data['success']) {
+                                if (is_paid && paid_with_cash) {
+                                    var cash = prompt('Заказ №' + data.daily_number + ' добавлен!, Введите полученную сумму:', "");
+                                    alert("Сдача: " + (parseInt(cash) - total))
+                                }
+                                else {
+                                    alert('Заказ №' + data.daily_number + ' добавлен!');
+                                }
+                                currOrder = [];
+                                DrawOrderTable();
+                                CalculateTotal();
+                                $('#cook_auto').prop('checked', true);
+
                             }
                             else {
-                                alert('Заказ №' + data.daily_number + ' добавлен!');
+                                alert(data['message']);
                             }
-                            currOrder = [];
-                            DrawOrderTable();
-                            CalculateTotal();
-                            $('#cook_auto').prop('checked', true);
                             location.reload();
                         }
                     }
                 ).fail(function () {
-                    alert('У вас нет права добавлять заказ!');
+                    alert('Необработанное исключение!');
                 });
             }
             else {
