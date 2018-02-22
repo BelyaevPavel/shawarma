@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.http.response import HttpResponseRedirect
 
-from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent, Servery, OrderOpinion
+from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent, Servery, OrderOpinion, PauseTracker
 from django.template import loader
 from django.core.exceptions import EmptyResultSet, MultipleObjectsReturned, PermissionDenied, ObjectDoesNotExist
 from requests.exceptions import ConnectionError, ConnectTimeout, Timeout
@@ -36,9 +36,16 @@ def cook_pause(request):
     user = request.user
     staff = Staff.objects.get(user=user)
     if staff.available:
+        pause = PauseTracker(staff=staff, start_timestamp=datetime.datetime.now())
+        pause.save()
         staff.available = False
         staff.save()
     else:
+        last_pause = PauseTracker.objects.filter(staff=staff,
+                                                 start_timestamp__contains=datetime.datetime.today()).order_by(
+            'start_timestamp')
+        if len(last_pause)>0:
+
         staff.available = True
         staff.save()
 
@@ -950,7 +957,7 @@ def make_order(request):
             'message': 'Multiple serveries returned!'
         }
         return JsonResponse(data)
-    except :
+    except:
         data = {
             'success': False,
             'message': 'Something wrong happened while getting servery!'
@@ -1765,6 +1772,75 @@ def opinion_statistics_ajax(request):
                          'order__open_time')]
     }
 
+    data = {
+        'html': template.render(context, request)
+    }
+    return JsonResponse(data=data)
+
+
+@login_required()
+def pause_statistic_page(request):
+    template = loader.get_template('queue/pause_statistics.html')
+    avg_duration_time = PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                    end_timestamp__contains=datetime.date.today()).values(
+        'start_timestamp', 'end_timestamp').aggregate(duration=Avg(F('start_timestamp') - F('end_timestamp')))
+    min_duration_time = PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                    end_timestamp__contains=datetime.date.today()).values(
+        'start_timestamp', 'end_timestamp').aggregate(duration=Min(F('start_timestamp') - F('start_timestamp')))
+    max_duration_time = PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                    end_timestamp__contains=datetime.date.today()).values(
+        'start_timestamp', 'end_timestamp').aggregate(duration=Max(F('start_timestamp') - F('start_timestamp')))
+    context = {
+        'total_pauses': len(PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                        end_timestamp__contains=datetime.date.today())),
+        'avg_duration': str(avg_duration_time['duration']).split('.', 2)[0],
+        'min_duration': str(min_duration_time['duration']).split('.', 2)[0],
+        'max_duration': str(max_duration_time['duration']).split('.', 2)[0],
+        'pauses': [{
+                       'staff': pause.staff,
+                       'start_timestamp': str(pause.start_timestamp).split('.', 2)[0],
+                       'end_timestamp': str(pause.end_timestamp).split('.', 2)[0],
+                       'duration': str(pause.end_timestamp - pause.start_timestamp).split('.', 2)[0]
+                   }
+                   for pause in PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                            end_timestamp__contains=datetime.date.today()).order_by(
+                'start_timestamp')]
+    }
+    return HttpResponse(template.render(context, request))
+
+
+@login_required()
+def pause_statistic_page_ajax(request):
+    start_date = request.POST.get('start_date', None)
+    start_date_conv = datetime.datetime.strptime(start_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
+    end_date = request.POST.get('end_date', None)
+    end_date_conv = datetime.datetime.strptime(end_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
+    template = loader.get_template('queue/pause_statistics_ajax.html')
+    avg_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
+                                                    end_timestamp__lte=end_date_conv).values(
+        'start_timestamp', 'end_timestamp').aggregate(duration=Avg(F('start_timestamp') - F('end_timestamp')))
+    min_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
+                                                    end_timestamp__lte=end_date_conv).values(
+        'start_timestamp', 'end_timestamp').aggregate(duration=Min(F('start_timestamp') - F('start_timestamp')))
+    max_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
+                                                    end_timestamp__lte=end_date_conv).values(
+        'start_timestamp', 'end_timestamp').aggregate(duration=Max(F('start_timestamp') - F('start_timestamp')))
+    context = {
+        'total_pauses': len(PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
+                                                        end_timestamp__lte=end_date_conv)),
+        'avg_duration': str(avg_duration_time['duration']).split('.', 2)[0],
+        'min_duration': str(min_duration_time['duration']).split('.', 2)[0],
+        'max_duration': str(max_duration_time['duration']).split('.', 2)[0],
+        'pauses': [{
+                       'staff': pause.staff,
+                       'start_timestamp': str(pause.start_timestamp).split('.', 2)[0],
+                       'end_timestamp': str(pause.end_timestamp).split('.', 2)[0],
+                       'duration': str(pause.end_timestamp - pause.start_timestamp).split('.', 2)[0]
+                   }
+                   for pause in PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                            end_timestamp__contains=datetime.date.today()).order_by(
+                'start_timestamp')]
+    }
     data = {
         'html': template.render(context, request)
     }
