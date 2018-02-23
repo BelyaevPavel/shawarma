@@ -41,10 +41,13 @@ def cook_pause(request):
         staff.available = False
         staff.save()
     else:
-        last_pause = PauseTracker.objects.filter(staff=staff,
-                                                 start_timestamp__contains=datetime.datetime.today()).order_by(
+        pauses = PauseTracker.objects.filter(staff=staff,
+                                             start_timestamp__contains=datetime.date.today()).order_by(
             'start_timestamp')
-        if len(last_pause)>0:
+        if len(pauses) > 0:
+            last_pause = pauses[len(pauses) - 1]
+            last_pause.end_timestamp = datetime.datetime.now()
+            last_pause.save()
 
         staff.available = True
         staff.save()
@@ -1784,13 +1787,13 @@ def pause_statistic_page(request):
     template = loader.get_template('queue/pause_statistics.html')
     avg_duration_time = PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
                                                     end_timestamp__contains=datetime.date.today()).values(
-        'start_timestamp', 'end_timestamp').aggregate(duration=Avg(F('start_timestamp') - F('end_timestamp')))
+        'start_timestamp', 'end_timestamp').aggregate(duration=Avg(F('end_timestamp') - F('start_timestamp')))
     min_duration_time = PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
                                                     end_timestamp__contains=datetime.date.today()).values(
-        'start_timestamp', 'end_timestamp').aggregate(duration=Min(F('start_timestamp') - F('start_timestamp')))
+        'start_timestamp', 'end_timestamp').aggregate(duration=Min(F('end_timestamp') - F('start_timestamp')))
     max_duration_time = PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
                                                     end_timestamp__contains=datetime.date.today()).values(
-        'start_timestamp', 'end_timestamp').aggregate(duration=Max(F('start_timestamp') - F('start_timestamp')))
+        'start_timestamp', 'end_timestamp').aggregate(duration=Max(F('end_timestamp') - F('start_timestamp')))
     context = {
         'total_pauses': len(PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
                                                         end_timestamp__contains=datetime.date.today())),
@@ -1819,13 +1822,13 @@ def pause_statistic_page_ajax(request):
     template = loader.get_template('queue/pause_statistics_ajax.html')
     avg_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
                                                     end_timestamp__lte=end_date_conv).values(
-        'start_timestamp', 'end_timestamp').aggregate(duration=Avg(F('start_timestamp') - F('end_timestamp')))
+        'start_timestamp', 'end_timestamp').aggregate(duration=Avg(F('end_timestamp') - F('start_timestamp')))
     min_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
                                                     end_timestamp__lte=end_date_conv).values(
-        'start_timestamp', 'end_timestamp').aggregate(duration=Min(F('start_timestamp') - F('start_timestamp')))
+        'start_timestamp', 'end_timestamp').aggregate(duration=Min(F('end_timestamp') - F('start_timestamp')))
     max_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
                                                     end_timestamp__lte=end_date_conv).values(
-        'start_timestamp', 'end_timestamp').aggregate(duration=Max(F('start_timestamp') - F('start_timestamp')))
+        'start_timestamp', 'end_timestamp').aggregate(duration=Max(F('end_timestamp') - F('start_timestamp')))
     context = {
         'total_pauses': len(PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
                                                         end_timestamp__lte=end_date_conv)),
