@@ -135,3 +135,10 @@ class OrderOpinion(models.Model):
 
     def __unicode__(self):
         return u"№{} {}".format(self.order, self.mark)
+
+
+class PauseTracker(models.Model):
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
+    start_timestamp = models.DateTimeField(verbose_name="Start Timestamp", null=True)
+    end_timestamp = models.DateTimeField(verbose_name="End Timestamp", null=True)
+
