@@ -540,8 +540,8 @@ div.cook-empty {
 }
 
 div.cook-item-container {
-    line-height: 80px;
-    height: 80px;
+    line-height: 1;
+    min-height: 80px;
     border-bottom: solid 1px #D8D8D8;
     border-top: solid 1px #D8D8D8;
     font-size: xx-large;
@@ -575,7 +575,7 @@ div.cook-daily-number {
 span.cook-item-comment {
     font-style: italic;
     color: blue;
-    float: right;
+    text-align: right;
 }
 
 div.cook-complete-all-button {
