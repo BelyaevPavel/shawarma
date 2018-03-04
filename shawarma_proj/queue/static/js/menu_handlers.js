@@ -13,7 +13,6 @@ var csrftoken = $("[name=csrfmiddlewaretoken]").val();
 
 $(function () {
     $('.subm').on('click', function (event) {
-        $('.subm').prop('disabled', true);
         if (currOrder.length > 0) {
             var confirmation = confirm("Подтвердить заказ?");
             var form = $('.subm');
@@ -25,6 +24,7 @@ $(function () {
                 paid_with_cash = true;
 
             if (confirmation == true) {
+                $('.subm').prop('disabled', true);
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         xhr.setRequestHeader("X-CSRFToken", csrftoken)

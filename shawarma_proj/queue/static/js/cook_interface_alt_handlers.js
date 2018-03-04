@@ -10,6 +10,7 @@ $(document).ready(function () {
     AdjustLineHeight();
     //GrillRefresher();
     Refresher();
+    RightSideRefresher();
 });
 $(window).resize(AdjustLineHeight);
 
@@ -39,7 +40,7 @@ function GrillRefresher() {
 }
 
 function Refresher() {
-    console.log("NextRefresher");
+    //console.log("NextRefresher");
     var url = $('#urls').attr('data-ajax');
     $.ajaxSetup({
         beforeSend: function (xhr, settings) {
@@ -52,12 +53,38 @@ function Refresher() {
         dataType: 'json',
         data: {'order_id': $('div.cook-daily-number').attr('order-id')},
         success: function (data) {
-            console.log("success");
-            console.log(data['html']);
+            //console.log("success");
+            //console.log(data['html']);
             $('#selected-order-content').html(data['html']);
         },
         complete: function () {
-            setTimeout(Refresher, 10000);
+            setTimeout(Refresher, 30000);
+        }
+    }).fail(function () {
+        alert('У вас нет прав!');
+    });
+}
+
+function RightSideRefresher() {
+    //console.log("NextRefresher");
+    var url = $('#urls').attr('data-ajax');
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken)
+        }
+    });
+    $.ajax({
+        type: 'POST',
+        url: url,
+        dataType: 'json',
+        data: {'order_id': $('div.cook-daily-number').attr('order-id')},
+        success: function (data) {
+            //console.log("success");
+            //console.log(data['html']);
+            $('#other-orders-queue').html(data['html_other']);
+        },
+        complete: function () {
+            setTimeout(RightSideRefresher, 5000);
         }
     }).fail(function () {
         alert('У вас нет прав!');
