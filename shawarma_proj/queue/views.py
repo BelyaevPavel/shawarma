@@ -641,6 +641,9 @@ def c_i_a(request):
                                          open_time__contains=datetime.date.today(), is_canceled=False,
                                          content_completed=False, is_grilling=False,
                                          close_time__isnull=True).order_by('open_time')
+        other_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
+                                            open_time__contains=datetime.date.today(), is_canceled=False,
+                                            close_time__isnull=True).order_by('open_time')
         has_order = False
         if len(new_order) > 0:
             new_order = new_order[0]
@@ -665,9 +668,18 @@ def c_i_a(request):
             'staff': staff
         }
         template = loader.get_template('queue/selected_order_content.html')
+        context_other = {
+            'cooks_orders': [{'order': cooks_order,
+                              'cook_content_count': len(OrderContent.objects.filter(order=cooks_order,
+                                                                                    menu_item__can_be_prepared_by__title__iexact='cook'))}
+                             for cooks_order in other_orders if len(OrderContent.objects.filter(order=cooks_order,
+                                                                                                menu_item__can_be_prepared_by__title__iexact='cook')) > 0]
+        }
+        template_other = loader.get_template('queue/cooks_order_queue.html')
         data = {
             'success': True,
-            'html': template.render(context, request)
+            'html': template.render(context, request),
+            'html_other': template_other.render(context_other, request)
         }
 
         return JsonResponse(data=data)
@@ -950,7 +962,7 @@ def make_order(request):
             'message': 'Multiple serveries returned!'
         }
         return JsonResponse(data)
-    except :
+    except:
         data = {
             'success': False,
             'message': 'Something wrong happened while getting servery!'
