@@ -11,8 +11,10 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import raven
 import psycopg2.extensions
-from my_settings import login, password, db_name, allowed_hosts, debug_flag, listner_url, listner_port, printer_url
+from my_settings import login, password, db_name, allowed_hosts, debug_flag, listner_url, listner_port, printer_url, raven_dsn, dir_name
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,6 +35,7 @@ ALLOWED_HOSTS = allowed_hosts
 # Application definition
 
 INSTALLED_APPS = [
+    'raven.contrib.django.raven_compat',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -79,6 +82,10 @@ WSGI_APPLICATION = 'shawarma.wsgi.application'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'root': {
+        'level': 'WARNING',
+        'handlers': ['sentry'],
+    },
     'formatters': {
         'verbose': {
             'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s \n'
@@ -88,6 +95,11 @@ LOGGING = {
         },
     },
     'handlers': {
+        'sentry': {
+            'level': 'ERROR',
+            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+            'tags': {'custom-tag': 'x'},
+        },
         'file_general': {
             'level': 'ERROR',
             'class': 'logging.FileHandler',
@@ -145,6 +157,11 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'sentry.errors': {
+            'level': 'DEBUG',
+            'handlers': ['file_general'],
+            'propagate': False,
+        }
     },
 }
 
@@ -215,3 +232,11 @@ PRINTER_URL = printer_url
 LOGIN_REDIRECT_URL = '/queue/'
 
 STATIC_ROOT = '/home/admintrud/shawarma/shawarma_rep/static_content/static/'
+
+
+RAVEN_CONFIG = {
+    'dsn': raven_dsn,
+    # If you are using git, you can also automatically configure the
+    # release based on the git info.
+    'release': raven.fetch_git_sha(os.path.abspath(os.pardir)),
+}

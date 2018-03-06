@@ -14,6 +14,7 @@ from django.contrib.auth import logout, login, views as auth_views
 from django.db.models import Max, Min, Count, Avg, F
 from hashlib import md5
 from shawarma.settings import TIME_ZONE, LISTNER_URL, LISTNER_PORT, PRINTER_URL
+from raven.contrib.django.raven_compat.models import client
 import requests
 import datetime
 import logging
@@ -45,8 +46,9 @@ def cook_pause(request):
             'message': 'Множество экземпляров персонала возвращено!'
         }
         logger.error(u'{} Множество экземпляров персонала возвращено!'.format(user))
+        client.captureException()
         return JsonResponse(data)
-    except :
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при поиске персонала!'
@@ -61,7 +63,7 @@ def cook_pause(request):
     else:
         try:
             last_pause = PauseTracker.objects.filter(staff=staff,
-                                                     start_timestamp__contains=datetime.datetime.today()).order_by(
+                                                     start_timestamp__contains=datetime.date.today()).order_by(
                 'start_timestamp')
         except:
             data = {
@@ -70,8 +72,8 @@ def cook_pause(request):
             }
             return JsonResponse(data)
         if len(last_pause) > 0:
-            last_pause = last_pause[len(last_pause) - 1].end_timestamp
-            last_pause = datetime.datetime.now()
+            last_pause = last_pause[len(last_pause) - 1]
+            last_pause.end_timestamp = datetime.datetime.now()
             last_pause.save()
 
         staff.available = True
@@ -96,6 +98,7 @@ def logout_view(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске пользователя!'
         }
+        client.captureException()
         return JsonResponse(data)
     if staff.available:
         staff.available = False
@@ -117,6 +120,7 @@ def welcomer(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске категории персонала!'
         }
+        client.captureException()
         return JsonResponse(data)
     return HttpResponse(template.render(context, request))
 
@@ -130,6 +134,7 @@ def menu(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске последней паузы!'
         }
+        client.captureException()
         return JsonResponse(data)
     template = loader.get_template('queue/menu_page.html')
     try:
@@ -145,6 +150,7 @@ def menu(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске последней паузы!'
         }
+        client.captureException()
         return JsonResponse(data)
     return HttpResponse(template.render(context, request))
 
@@ -163,6 +169,7 @@ def search_comment(request):
                 'success': False,
                 'message': 'Что-то пошло не так при поиске комментариев!'
             }
+            client.captureException()
             return JsonResponse(data)
         context = {
             'id': content_id,
@@ -196,6 +203,7 @@ def evaluate(request):
                     'success': False,
                     'message': 'Что-то пошло не так при поиске номера заказов!'
                 }
+                client.captureException()
                 return JsonResponse(data)
             current_daily_number = current_daily_number['daily_number__max']
             hundreds = current_daily_number // 100
@@ -209,6 +217,7 @@ def evaluate(request):
                             'success': False,
                             'message': 'Что-то пошло не так при поиске заказа!'
                         }
+                        client.captureException()
                         return JsonResponse(data)
                     order_opinion = OrderOpinion(note=note, mark=int(mark), order=order,
                                                  post_time=datetime.datetime.now())
@@ -222,6 +231,7 @@ def evaluate(request):
                             'success': False,
                             'message': 'Что-то пошло не так при поиске заказа!'
                         }
+                        client.captureException()
                         return JsonResponse(data)
                     order_opinion = OrderOpinion(note=note, mark=int(mark), order=order,
                                                  post_time=datetime.datetime.now())
@@ -238,6 +248,7 @@ def evaluate(request):
         data = {
             'success': False
         }
+        client.captureException()
         return JsonResponse(data)
 
 
@@ -250,6 +261,7 @@ def buyer_queue(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске открытых заказов!'
         }
+        client.captureException()
         return JsonResponse(data)
     try:
         ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
@@ -260,6 +272,7 @@ def buyer_queue(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске готовых заказов!'
         }
+        client.captureException()
         return JsonResponse(data)
     context = {
         'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number} for order in open_orders],
@@ -283,6 +296,7 @@ def buyer_queue_ajax(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске открытых заказов!'
         }
+        client.captureException()
         return JsonResponse(data)
     try:
         ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
@@ -293,6 +307,7 @@ def buyer_queue_ajax(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске готовых заказов!'
         }
+        client.captureException()
         return JsonResponse(data)
     context = {
         'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number} for order in open_orders],
@@ -322,6 +337,7 @@ def current_queue(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске открытых заказов!'
         }
+        client.captureException()
         return JsonResponse(data)
     try:
         ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
@@ -332,6 +348,7 @@ def current_queue(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске готовых заказов!'
         }
+        client.captureException()
         return JsonResponse(data)
     # print open_orders
     # print ready_orders
@@ -385,6 +402,7 @@ def order_history(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске последней паузы!'
         }
+        client.captureException()
         return JsonResponse(data)
     # print open_orders
     # print ready_orders
@@ -410,6 +428,7 @@ def order_history(request):
             'success': False,
             'message': 'Что-то пошло не так при подготовке шаблона!'
         }
+        client.captureException()
         return JsonResponse(data)
     # print context
     return HttpResponse(template.render(context, request))
@@ -425,8 +444,8 @@ def current_queue_ajax(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске последней паузы!'
         }
+        client.captureException()
         return JsonResponse(data)
-
 
     try:
         ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
@@ -437,6 +456,7 @@ def current_queue_ajax(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске последней паузы!'
         }
+        client.captureException()
         return JsonResponse(data)
 
     template = loader.get_template('queue/current_queue_grid_ajax.html')
@@ -453,7 +473,8 @@ def current_queue_ajax(request):
                                  menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
                                  finish_timestamp__isnull=False).aggregate(count=Count('id')),
                              'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
-                                 menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
+                                 menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(
+                                 count=Count('id')),
                              'operator_part': OrderContent.objects.filter(order=open_order).filter(
                                  menu_item__can_be_prepared_by__title__iexact='operator')
                              } for open_order in open_orders],
@@ -467,7 +488,8 @@ def current_queue_ajax(request):
                                   menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
                                   finish_timestamp__isnull=False).aggregate(count=Count('id')),
                               'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
-                                  menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
+                                  menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(
+                                  count=Count('id')),
                               'operator_part': OrderContent.objects.filter(order=open_order).filter(
                                   menu_item__can_be_prepared_by__title__iexact='operator')
                               } for open_order in ready_orders],
@@ -480,6 +502,7 @@ def current_queue_ajax(request):
             'success': False,
             'message': 'Что-то пошло не так при поиске последней паузы!'
         }
+        client.captureException()
         return JsonResponse(data)
     data = {
         'html': template.render(context, request)
@@ -808,6 +831,7 @@ def c_i_a(request):
                 'success': False,
                 'message': 'Что-то пошло не так при поиске пользователя!'
             }
+            client.captureException()
             return JsonResponse(data)
         # if not staff.available:
         #     staff.available = True
@@ -827,6 +851,7 @@ def c_i_a(request):
                 'success': False,
                 'message': 'Что-то пошло не так при поиске заказа!'
             }
+            client.captureException()
             return JsonResponse(data)
 
         has_order = False
@@ -841,30 +866,33 @@ def c_i_a(request):
                     'success': False,
                     'message': 'Что-то пошло не так при поиске продуктов!'
                 }
+                client.captureException()
                 return JsonResponse(data)
             if len(taken_order_content) > 0:
                 has_order = True
 
         try:
             taken_order_content = OrderContent.objects.filter(order=new_order,
-                                                          menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
-            'id')
-        except :
+                                                              menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+                'id')
+        except:
             data = {
                 'success': False,
                 'message': 'Что-то пошло не так при поиске продуктов!'
             }
+            client.captureException()
             return JsonResponse(data)
         try:
             taken_order_in_grill_content = OrderContent.objects.filter(order=new_order,
-                                                                   grill_timestamp__isnull=False,
-                                                                   menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
-            'id')
-        except :
+                                                                       grill_timestamp__isnull=False,
+                                                                       menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+                'id')
+        except:
             data = {
                 'success': False,
                 'message': 'Что-то пошло не так при поиске продуктов!'
             }
+            client.captureException()
             return JsonResponse(data)
         context = {
             'selected_order': new_order,
@@ -1006,19 +1034,21 @@ def s_i_a(request):
 def set_cooker(request, order_id, cooker_id):
     try:
         order = Order.objects.get_object_or_404(id=order_id)
-    except :
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при поиске заказа!'
         }
+        client.captureException()
         return JsonResponse(data)
     try:
         cooker = Staff.objects.get_object_or_404(id=cooker_id)
-    except :
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при поиске повара!'
         }
+        client.captureException()
         return JsonResponse(data)
     order.prepared_by = cooker
 
@@ -1072,7 +1102,11 @@ def print_order(request, order_id):
 
 
 def voice_order(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+    try:
+        order = Order.objects.get(id=order_id)
+    except:
+        client.captureException()
+        return HttpResponse()
     order.is_voiced = False
     order.save()
 
@@ -1087,11 +1121,12 @@ def unvoice_order(request):
     if daily_number:
         try:
             order = Order.objects.get(daily_number=daily_number, open_time__contains=datetime.date.today())
-        except :
+        except:
             data = {
                 'success': False,
                 'message': 'Что-то пошло не так при поиске заказа!'
             }
+            client.captureException()
             return JsonResponse(data)
         order.is_voiced = True
         order.save()
@@ -1106,11 +1141,12 @@ def select_order(request):
     user = request.user
     try:
         staff = Staff.objects.get(user=user)
-    except :
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при поиске персонала!'
         }
+        client.captureException()
         return JsonResponse(data)
     order_id = request.POST.get('order_id', None)
     data = {
@@ -1127,11 +1163,12 @@ def select_order(request):
                                             start=1)],
                 'staff_category': staff.staff_category
             }
-        except :
+        except:
             data = {
                 'success': False,
                 'message': 'Что-то пошло не так при поиске последней паузы!'
             }
+            client.captureException()
             return JsonResponse(data)
         template = loader.get_template('queue/selected_order_content.html')
         data = {
@@ -1171,12 +1208,13 @@ def shashlychnik_select_order(request):
 def voice_all(request):
     try:
         today_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        is_ready=True)
-    except :
+                                            is_ready=True)
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при поиске заказов!'
         }
+        client.captureException()
         return JsonResponse(data)
     for order in today_orders:
         order.is_voiced = False
@@ -1189,7 +1227,7 @@ def voice_all(request):
 @permission_required('queue.add_order')
 def make_order(request):
     servery_ip = request.META.get('HTTP_X_REAL_IP', '') or request.META.get('HTTP_X_FORWARDED_FOR', '')
-    # servery_ip = '127.0.0.1'
+    servery_ip = '127.0.0.1'
     content = json.loads(request.POST['order_content'])
     is_paid = json.loads(request.POST['is_paid'])
     paid_with_cash = json.loads(request.POST['paid_with_cash'])
@@ -1209,12 +1247,14 @@ def make_order(request):
             'success': False,
             'message': 'Multiple serveries returned!'
         }
+        client.captureException()
         return JsonResponse(data)
     except:
         data = {
             'success': False,
             'message': 'Something wrong happened while getting servery!'
         }
+        client.captureException()
         return JsonResponse(data)
 
     order_next_number = 0
@@ -1226,12 +1266,14 @@ def make_order(request):
             'success': False,
             'message': 'Empty set of orders returned!'
         }
+        client.captureException()
         return JsonResponse(data)
     except:
         data = {
             'success': False,
             'message': 'Something wrong happened while getting set of orders!'
         }
+        client.captureException()
         return JsonResponse(data)
 
     if order_last_daily_number:
@@ -1248,6 +1290,7 @@ def make_order(request):
             'success': False,
             'message': 'Something wrong happened while creating new order!'
         }
+        client.captureException()
         return JsonResponse(data)
 
     # cooks = Staff.objects.filter(user__last_login__contains=datetime.date.today(), staff_category__title__iexact='Cook')
@@ -1258,6 +1301,7 @@ def make_order(request):
             'success': False,
             'message': 'Something wrong happened while getting set of cooks!'
         }
+        client.captureException()
         return JsonResponse(data)
     # reordering_flag = False
     # while
@@ -1268,6 +1312,13 @@ def make_order(request):
     data = {
         "daily_number": order.daily_number
     }
+
+    if len(cooks) == 0:
+        data = {
+            'success': False,
+            'message': 'Нет доступных поваров!'
+        }
+        return JsonResponse(data)
 
     has_cook_content = False
     for item in content:
@@ -1306,12 +1357,14 @@ def make_order(request):
                     'success': False,
                     'message': 'Multiple staff returned while binding cook to order!'
                 }
+                client.captureException()
                 return JsonResponse(data)
             except:
                 data = {
                     'success': False,
                     'message': 'Something wrong happened while getting set of orders!'
                 }
+                client.captureException()
                 return JsonResponse(data)
 
     content_to_send = []
@@ -1332,6 +1385,7 @@ def make_order(request):
                     'success': False,
                     'message': 'Something wrong happened while creating new order!'
                 }
+                client.captureException()
                 return JsonResponse(data)
             new_order_content.save()
             menu_item = Menu.objects.get(id=item['id'])
@@ -1366,6 +1420,7 @@ def make_order(request):
                 'success': False,
                 'message': 'Connection error occured while sending to 1C!'
             }
+            client.captureException()
             return JsonResponse(data)
         except:
             order.delete()
@@ -1373,6 +1428,7 @@ def make_order(request):
                 'success': False,
                 'message': 'Something wrong happened while sending to 1C!'
             }
+            client.captureException()
             return JsonResponse(data)
 
         print "Request sent."
@@ -1389,11 +1445,12 @@ def close_order(request):
     order_id = json.loads(request.POST.get('order_id', None))
     try:
         order = Order.objects.get(id=order_id)
-    except :
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при поиске заказа!'
         }
+        client.captureException()
         return JsonResponse(data)
     order.close_time = datetime.datetime.now()
     order.is_ready = True
@@ -1413,20 +1470,22 @@ def cancel_order(request):
     if order_id:
         try:
             order = Order.objects.get(id=order_id)
-        except :
+        except:
             data = {
                 'success': False,
                 'message': 'Что-то пошло не так при поиске заказа!'
             }
+            client.captureException()
             return JsonResponse(data)
 
         try:
             order.canceled_by = Staff.objects.get(user=request.user)
-        except :
+        except:
             data = {
                 'success': False,
                 'message': 'Что-то пошло не так при поиске персонала!'
             }
+            client.captureException()
             return JsonResponse(data)
         order.is_canceled = True
         order.save()
@@ -1841,7 +1900,7 @@ def pay_order(request):
         for index, item_id in enumerate(ids):
             try:
                 item = OrderContent.objects.get(id=item_id)
-            except :
+            except:
                 data = {
                     'success': False,
                     'message': 'Что-то пошло не так при поиске продуктов!'
@@ -1852,7 +1911,7 @@ def pay_order(request):
 
         try:
             order = Order.objects.get(id=order_id)
-        except :
+        except:
             data = {
                 'success': False,
                 'message': 'Что-то пошло не так при поиске заказа!'
@@ -1866,7 +1925,7 @@ def pay_order(request):
         supplement_presence = False
         try:
             content = OrderContent.objects.filter(order=order)
-        except :
+        except:
             data = {
                 'success': False,
                 'message': 'Что-то пошло не так при поиске продуктов!'
@@ -1905,7 +1964,7 @@ def cancel_item(request):
     if product_id:
         try:
             item = OrderContent.objects.get(id=product_id)
-        except :
+        except:
             data = {
                 'success': False,
                 'message': 'Что-то пошло не так при поиске продуктов!'
@@ -1983,9 +2042,9 @@ def statistic_page_ajax(request):
     template = loader.get_template('queue/statistics_ajax.html')
     try:
         avg_preparation_time = Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv,
-                                                close_time__isnull=False, is_canceled=False).values(
-        'open_time', 'close_time').aggregate(preparation_time=Avg(F('close_time') - F('open_time')))
-    except :
+                                                    close_time__isnull=False, is_canceled=False).values(
+            'open_time', 'close_time').aggregate(preparation_time=Avg(F('close_time') - F('open_time')))
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при вычислении среднего времени готовки!'
@@ -1994,9 +2053,9 @@ def statistic_page_ajax(request):
 
     try:
         min_preparation_time = Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv,
-                                                close_time__isnull=False, is_canceled=False).values(
-        'open_time', 'close_time').aggregate(preparation_time=Min(F('close_time') - F('open_time')))
-    except :
+                                                    close_time__isnull=False, is_canceled=False).values(
+            'open_time', 'close_time').aggregate(preparation_time=Min(F('close_time') - F('open_time')))
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при вычислении минимального времени готовки!'
@@ -2005,9 +2064,9 @@ def statistic_page_ajax(request):
 
     try:
         max_preparation_time = Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv,
-                                                close_time__isnull=False, is_canceled=False).values(
-        'open_time', 'close_time').aggregate(preparation_time=Max(F('close_time') - F('open_time')))
-    except :
+                                                    close_time__isnull=False, is_canceled=False).values(
+            'open_time', 'close_time').aggregate(preparation_time=Max(F('close_time') - F('open_time')))
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при вычислении максимального времени готовки!'
@@ -2049,9 +2108,10 @@ def statistic_page_ajax(request):
                            'open_time', 'close_time').aggregate(preparation_time=Max(F('close_time') - F('open_time')))[
                                                 'preparation_time']).split('.', 2)[0]
                        }
-                      for cook in Staff.objects.filter(staff_category__title__iexact='Cook').order_by('user__first_name')]
+                      for cook in
+                      Staff.objects.filter(staff_category__title__iexact='Cook').order_by('user__first_name')]
         }
-    except :
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при подготовки шаблона!'
@@ -2092,28 +2152,33 @@ def opinion_statistics_ajax(request):
     template = loader.get_template('queue/opinion_statistics_ajax.html')
     try:
         avg_mark = OrderOpinion.objects.filter(post_time__gte=start_date_conv,
-                                           post_time__lte=end_date_conv).values('mark').aggregate(avg_mark=Avg('mark'))
-    except :
+                                               post_time__lte=end_date_conv).values('mark').aggregate(
+            avg_mark=Avg('mark'))
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при вычислении средней оценки!'
         }
+        client.captureException()
         return JsonResponse(data)
 
     try:
         min_mark = OrderOpinion.objects.filter(post_time__gte=start_date_conv,
-                                           post_time__lte=end_date_conv).values('mark').aggregate(min_mark=Min('mark'))
-    except :
+                                               post_time__lte=end_date_conv).values('mark').aggregate(
+            min_mark=Min('mark'))
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при вычислении минимальной оценки!'
         }
+        client.captureException()
         return JsonResponse(data)
 
     try:
         max_mark = OrderOpinion.objects.filter(post_time__gte=start_date_conv,
-                                           post_time__lte=end_date_conv).values('mark').aggregate(max_mark=Max('mark'))
-    except :
+                                               post_time__lte=end_date_conv).values('mark').aggregate(
+            max_mark=Max('mark'))
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при вычислении максимальной оценки!'
@@ -2128,14 +2193,16 @@ def opinion_statistics_ajax(request):
             'min_mark': min_mark['min_mark'],
             'max_mark': max_mark['max_mark'],
             'opinions': [opinion for opinion in
-                         OrderOpinion.objects.filter(post_time__gte=start_date_conv, post_time__lte=end_date_conv).order_by(
+                         OrderOpinion.objects.filter(post_time__gte=start_date_conv,
+                                                     post_time__lte=end_date_conv).order_by(
                              'order__open_time')]
         }
-    except :
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при построении шаблона!'
         }
+        client.captureException()
         return JsonResponse(data)
 
     data = {
@@ -2184,9 +2251,9 @@ def pause_statistic_page_ajax(request):
     template = loader.get_template('queue/pause_statistics_ajax.html')
     try:
         avg_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
-                                                    end_timestamp__lte=end_date_conv).values(
-        'start_timestamp', 'end_timestamp').aggregate(duration=Avg(F('start_timestamp') - F('end_timestamp')))
-    except :
+                                                        end_timestamp__lte=end_date_conv).values(
+            'start_timestamp', 'end_timestamp').aggregate(duration=Avg(F('start_timestamp') - F('end_timestamp')))
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при вычислении средней продолжительности пауз!'
@@ -2195,9 +2262,9 @@ def pause_statistic_page_ajax(request):
 
     try:
         min_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
-                                                    end_timestamp__lte=end_date_conv).values(
-        'start_timestamp', 'end_timestamp').aggregate(duration=Min(F('start_timestamp') - F('start_timestamp')))
-    except :
+                                                        end_timestamp__lte=end_date_conv).values(
+            'start_timestamp', 'end_timestamp').aggregate(duration=Min(F('start_timestamp') - F('start_timestamp')))
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при вычислении минимальной продолжительности пауз!'
@@ -2206,9 +2273,9 @@ def pause_statistic_page_ajax(request):
 
     try:
         max_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
-                                                    end_timestamp__lte=end_date_conv).values(
-        'start_timestamp', 'end_timestamp').aggregate(duration=Max(F('start_timestamp') - F('start_timestamp')))
-    except :
+                                                        end_timestamp__lte=end_date_conv).values(
+            'start_timestamp', 'end_timestamp').aggregate(duration=Max(F('start_timestamp') - F('start_timestamp')))
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при вычислении максимальной продолжительности пауз!'
@@ -2232,11 +2299,12 @@ def pause_statistic_page_ajax(request):
                                                                 end_timestamp__contains=datetime.date.today()).order_by(
                     'start_timestamp')]
         }
-    except :
+    except:
         data = {
             'success': False,
             'message': 'Что-то пошло не так при построении шаблона!'
         }
+        client.captureException()
         return JsonResponse(data)
     data = {
         'html': template.render(context, request)
