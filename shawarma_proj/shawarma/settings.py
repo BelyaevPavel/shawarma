@@ -76,6 +76,79 @@ TEMPLATES = [
 WSGI_APPLICATION = 'shawarma.wsgi.application'
 
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s \n'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'file_general': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug.log',
+            'formatter': 'verbose'
+        },
+        'file_request': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug_request.log',
+            'formatter': 'verbose'
+        },
+        'file_server': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug_server.log',
+            'formatter': 'verbose'
+        },
+        'file_template': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug_template.log',
+            'formatter': 'verbose'
+        },
+        'file_db': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug_db.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file_general'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['file_request'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.server': {
+            'handlers': ['file_server'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.template': {
+            'handlers': ['file_template'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.db.backends': {
+            'handlers': ['file_db'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
+
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
