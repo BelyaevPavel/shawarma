@@ -4,6 +4,7 @@
 $(document).ready(function () {
     $('#menu').addClass('header-active');
     $('.menu-item').hide();
+    $('.subm').prop('disabled', false);
 });
 
 var currOrder = [];

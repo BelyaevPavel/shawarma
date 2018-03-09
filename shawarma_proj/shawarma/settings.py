@@ -13,8 +13,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 import raven
 import psycopg2.extensions
-from my_settings import login, password, db_name, allowed_hosts, debug_flag, listner_url, listner_port, printer_url, raven_dsn, dir_name
-
+from my_settings import login, password, db_name, allowed_hosts, debug_flag, listner_url, listner_port, printer_url, raven_dsn
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -101,7 +100,7 @@ LOGGING = {
             'tags': {'custom-tag': 'x'},
         },
         'file_general': {
-            'level': 'ERROR',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': 'log/debug.log',
             'formatter': 'verbose'
