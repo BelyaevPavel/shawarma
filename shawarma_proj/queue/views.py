@@ -321,9 +321,12 @@ def buyer_queue_ajax(request):
     template = loader.get_template('queue/buyer_queue_ajax.html')
     data = {
         'html': template.render(context, request),
-        'ready': json.dumps([order.daily_number for order in ready_orders]),
-        'voiced': json.dumps([order.is_voiced for order in ready_orders])
+        'ready': json.dumps([order.daily_number for order in ready_orders.filter(is_voiced=False)]),
+        'voiced': json.dumps([order.is_voiced for order in ready_orders.filter(is_voiced=False)])
     }
+    # for order in ready_orders:
+    #     order.is_voiced = True
+    #     order.save()
     return JsonResponse(data)
 
 
@@ -1227,7 +1230,7 @@ def voice_all(request):
 @permission_required('queue.add_order')
 def make_order(request):
     servery_ip = request.META.get('HTTP_X_REAL_IP', '') or request.META.get('HTTP_X_FORWARDED_FOR', '')
-    servery_ip = '127.0.0.1'
+    # servery_ip = '127.0.0.1'
     content = json.loads(request.POST['order_content'])
     is_paid = json.loads(request.POST['is_paid'])
     paid_with_cash = json.loads(request.POST['paid_with_cash'])
