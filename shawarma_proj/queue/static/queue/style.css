@@ -539,12 +539,12 @@ div.cook-empty {
     font-size: xx-large;
 }
 
-div.cook-item-container {
+div.cook-item-container{
     line-height: 1;
     min-height: 80px;
     border-bottom: solid 1px #D8D8D8;
     border-top: solid 1px #D8D8D8;
-    font-size: xx-large;
+    font-size: 150%;
     cursor: pointer;
 }
 
