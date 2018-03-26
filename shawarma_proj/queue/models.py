@@ -57,15 +57,27 @@ class Menu(models.Model):
         return u"{}".format(self.title)
 
 
-class Servery(models.Model):
-    title = models.CharField(max_length=500, default="")
-    ip_address = models.CharField(max_length=500, default="")
+class Salespoint(models.Model):
+    subnet_number = models.IntegerField(default=0)
+    title = models.CharField(max_length=100)
 
     def __str__(self):
         return u"{}".format(self.title)
 
     def __unicode__(self):
         return u"{}".format(self.title)
+
+
+class Servery(models.Model):
+    title = models.CharField(max_length=500, default="")
+    ip_address = models.CharField(max_length=500, default="")
+    salespoint = models.ForeignKey(Salespoint, null=True)
+
+    def __str__(self):
+        return u"{} {}".format(self.salespoint, self.title)
+
+    def __unicode__(self):
+        return u"{} {}".format(self.salespoint, self.title)
 
 
 class Order(models.Model):
@@ -96,6 +108,12 @@ class Order(models.Model):
             ('can_cancel', 'User can cancel order.'),
             ('can_close', 'User can close order.'),
         )
+
+    def __str__(self):
+        return u"№{}".format(self.daily_number)
+
+    def __unicode__(self):
+        return u"№{}".format(self.daily_number)
 
 
 class OrderContent(models.Model):
