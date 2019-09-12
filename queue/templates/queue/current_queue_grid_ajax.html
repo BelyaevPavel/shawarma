@@ -1,0 +1,20 @@
+{% load static %}
+<input id="urls" hidden data-close-order-url="{% url 'close_order' %}">
+<div class="open-orders">
+    {% for open_order in open_orders %}
+        {% include 'queue/open_order_block.html' with open_order=open_order %}
+    {% empty %}
+        <div>
+            Нет заказов.
+        </div>
+    {% endfor %}
+</div>
+<div class="ready-orders">
+    {% for open_order in ready_orders %}
+        {% include 'queue/open_order_block.html' with open_order=open_order %}
+    {% empty %}
+        <div>
+            Нет заказов.
+        </div>
+    {% endfor %}
+</div>

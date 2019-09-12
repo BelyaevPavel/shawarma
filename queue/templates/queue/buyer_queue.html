@@ -1,0 +1,32 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
+<script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/buyer_queue_handlers.js' %}"></script>
+<input hidden id="urls" data-refresh-url="{% url 'buyer_queue_ajax' %}">
+<div class="company-emblem">
+    <img src="{% static "img/logo.jpg" %}" width="200" height="200">
+</div>
+<div id="page-content">
+    <div class="open-orders-container">
+        <div class="open-order-display">
+            Заказы в работе
+        </div>
+    {% for open_order in open_orders %}
+        <div class="open-order-display">
+            № {{ open_order.daily_number }}
+        </div>
+    {% empty %}
+    {% endfor %}
+    </div>
+    <div class="ready-orders-container">
+    <div class="open-order-display">
+        Заказы на выдачу
+    </div>
+    {% for ready_order in ready_orders %}
+        <div class="ready-order-display">
+            № {{ ready_order.daily_number }}
+        </div>
+    {% empty %}
+    {% endfor %}
+    </div>
+</div>
